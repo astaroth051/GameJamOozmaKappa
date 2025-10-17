@@ -557,7 +557,6 @@ GameObject:
   - component: {fileID: 5866666021433424139}
   - component: {fileID: 5866666021433424142}
   - component: {fileID: 5866666021433424141}
-  - component: {fileID: 5866666021433424140}
   m_Layer: 0
   m_Name: Ellis
   m_TagString: Player
@@ -1792,23 +1791,6 @@ CapsuleCollider:
   m_Height: 0.9740813
   m_Direction: 1
   m_Center: {x: -0.00021266937, y: 0.5029594, z: 0}
---- !u!114 &5866666021433424140
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 919132148561689033}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 11cf6be2f539c8f4cbc3dee2e1b6e91a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  walkSpeed: 2
-  runSpeed: 5
-  jumpForce: 5
-  gravity: -9.81
-  rotationSpeed: 10
 --- !u!143 &5866666021433424141
 CharacterController:
   m_ObjectHideFlags: 0
@@ -1862,7 +1844,7 @@ MonoBehaviour:
   m_ActionEvents:
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 5866666021433424140}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: OnMove
         m_Mode: 0
@@ -1878,7 +1860,7 @@ MonoBehaviour:
     m_ActionName: Player/Move[/Keyboard/w,/Keyboard/s,/Keyboard/a,/Keyboard/d]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 5866666021433424140}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: OnLook
         m_Mode: 0
@@ -1894,7 +1876,7 @@ MonoBehaviour:
     m_ActionName: Player/Look[/Mouse/delta]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 5866666021433424140}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: OnJump
         m_Mode: 0
@@ -1910,7 +1892,7 @@ MonoBehaviour:
     m_ActionName: Player/Jump[/Keyboard/space]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 5866666021433424140}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: OnRun
         m_Mode: 0
