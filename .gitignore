@@ -1,0 +1,56 @@
+# === Unity core (no subir cache ni builds) ===
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]serSettings/
+[Mm]emoryCaptures/
+sysinfo.txt
+
+# Collaborate/Plastic
+[Pp]ackages/com.unity.collab-proxy/
+
+# === IDE/editor ===
+.vscode/
+.vs/
+.idea/
+*.suo
+*.user
+*.userprefs
+*.csproj
+*.sln
+*.pidb
+*.pdb
+*.svd
+*.tmp
+*.booproj
+*.unityproj
+
+# === OS ===
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# === Build artifacts ===
+*.apk
+*.aab
+*.ipa
+*.exe
+*.app
+*.xcodeproj/
+*.xcworkspace/
+*.dll
+*.lib
+*.so
+*.dylib
+
+# === Crash/Profiler ===
+*.stacktrace
+*.dmp
+*.etl
+*.nvram
+*.nvraw
+
