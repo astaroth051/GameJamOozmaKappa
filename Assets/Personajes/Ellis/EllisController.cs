@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(CharacterController))]
 public class EllisTankController : MonoBehaviour
@@ -7,6 +8,7 @@ public class EllisTankController : MonoBehaviour
     private PlayerControl controls;
     private CharacterController controller;
     private Animator animator;
+    private AudioSource audioSource;
 
     [Header("Movimiento")]
     public float walkSpeed = 2f;
@@ -15,12 +17,30 @@ public class EllisTankController : MonoBehaviour
     public float gravity = -9.81f;
     public float jumpHeight = 1.2f;
 
+    [Header("Sonidos")]
+    public AudioClip walkClip;
+    public AudioClip backClip;
+    public AudioClip jumpClip;
+    public AudioClip pillClip;
+    public AudioClip idleLoop;
+    public List<AudioClip> focusClips;
+
+    [Header("Tiempos (segundos)")]
+    public float walkStepInterval = 0.6f;
+    public float runStepInterval = 0.35f;
+    public float idleLoopInterval = 4f;
+    public float focusInterval = 8f;
+
     private Vector2 moveInput;
     private Vector3 velocity;
     private bool isJumping;
     private bool isRunning;
     private bool isPilling;
+    private bool isFocused;
     private float jumpTimer;
+    private float stepTimer;
+    private float idleTimer;
+    private float focusTimer;
     private string lastTrigger = "";
 
     private void Awake()
@@ -28,6 +48,10 @@ public class EllisTankController : MonoBehaviour
         controls = new PlayerControl();
         controller = GetComponent<CharacterController>();
         animator = GetComponentInChildren<Animator>();
+        audioSource = GetComponent<AudioSource>();
+
+        if (audioSource == null)
+            audioSource = gameObject.AddComponent<AudioSource>();
     }
 
     private void OnEnable()
@@ -40,7 +64,6 @@ public class EllisTankController : MonoBehaviour
         controls.Player.Jump.performed += _ => StartJump();
         controls.Player.Run.started += _ => isRunning = true;
         controls.Player.Run.canceled += _ => isRunning = false;
-
         controls.Player.Pill.performed += _ => StartPill();
     }
 
@@ -51,9 +74,11 @@ public class EllisTankController : MonoBehaviour
 
     private void Update()
     {
-        if (isPilling) return; // bloqueo completo durante Pill
+        if (isPilling) return;
         Move();
         HandleJump();
+        HandleIdleSound();
+        HandleFocusSound();
     }
 
     private void Move()
@@ -70,6 +95,20 @@ public class EllisTankController : MonoBehaviour
 
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
+
+        if (moveInput.y != 0 && isGrounded && !isJumping)
+        {
+            stepTimer -= Time.deltaTime;
+            if (stepTimer <= 0)
+            {
+                if (moveInput.y > 0)
+                    PlayStepSound(walkClip, isRunning);
+                else if (moveInput.y < 0)
+                    PlayStepSound(backClip, false);
+
+                stepTimer = isRunning ? runStepInterval : walkStepInterval;
+            }
+        }
 
         if (isJumping) return;
 
@@ -93,6 +132,13 @@ public class EllisTankController : MonoBehaviour
         }
     }
 
+    private void PlayStepSound(AudioClip clip, bool fast)
+    {
+        if (clip == null) return;
+        audioSource.pitch = fast ? 1.5f : 1f;
+        audioSource.PlayOneShot(clip);
+    }
+
     private void StartJump()
     {
         if (!isJumping && !isPilling)
@@ -101,6 +147,7 @@ public class EllisTankController : MonoBehaviour
             jumpTimer = 2.20f;
             PlayImmediate("jump");
             Invoke(nameof(ApplyJumpForce), 0.5f);
+            if (jumpClip) audioSource.PlayOneShot(jumpClip);
         }
     }
 
@@ -122,15 +169,13 @@ public class EllisTankController : MonoBehaviour
         }
     }
 
-    // --- Animación Pill (bloquea 6.4 s) ---
     private void StartPill()
     {
         if (isPilling || isJumping) return;
 
         isPilling = true;
         PlayImmediate("pill");
-
-        // Bloquea control hasta que pasen exactamente 6.4 segundos
+        if (pillClip) audioSource.PlayOneShot(pillClip);
         Invoke(nameof(EndPill), 6.4f);
     }
 
@@ -138,6 +183,39 @@ public class EllisTankController : MonoBehaviour
     {
         isPilling = false;
         PlayImmediate("idle");
+    }
+
+    // --- FOCUS: llamado manualmente desde otra lógica ---
+    public void TriggerFocus()
+    {
+        if (focusClips == null || focusClips.Count == 0) return;
+        isFocused = true;
+        focusTimer = 0; // ejecuta uno inmediato
+    }
+
+    private void HandleFocusSound()
+    {
+        if (!isFocused) return;
+
+        focusTimer -= Time.deltaTime;
+        if (focusTimer <= 0)
+        {
+            AudioClip clip = focusClips[Random.Range(0, focusClips.Count)];
+            audioSource.PlayOneShot(clip);
+            focusTimer = focusInterval;
+        }
+    }
+
+    private void HandleIdleSound()
+    {
+        if (moveInput.magnitude > 0.1f || isJumping || isPilling) return;
+
+        idleTimer -= Time.deltaTime;
+        if (idleTimer <= 0 && idleLoop != null)
+        {
+            audioSource.PlayOneShot(idleLoop);
+            idleTimer = idleLoopInterval;
+        }
     }
 
     private void PlayImmediate(string trigger)
