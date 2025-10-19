@@ -35,8 +35,8 @@ public class EllisTankController : MonoBehaviour
         controls.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
         controls.Player.Move.canceled += _ => moveInput = Vector2.zero;
         controls.Player.Jump.performed += _ => StartJump();
-        controls.Player.Run.started += _ => { isRunning = true; Debug.Log("RUN started (Shift / StickPress)"); };
-        controls.Player.Run.canceled += _ => { isRunning = false; Debug.Log("RUN canceled"); };
+        controls.Player.Run.started += _ => isRunning = true;
+        controls.Player.Run.canceled += _ => isRunning = false;
     }
 
     private void OnDisable()
@@ -67,38 +67,23 @@ public class EllisTankController : MonoBehaviour
 
         if (isJumping) return;
 
-        // Log velocidad y dirección
+        // Si hay movimiento
         if (moveInput.magnitude > 0.1f)
         {
-            if (isRunning && moveInput.y > 0)
-            {
-                Debug.Log("Running: velocidad " + currentSpeed + " - trigger RUN");
-                PlayImmediate("run");
-            }
-            else if (moveInput.y > 0)
-            {
-                Debug.Log("Walking: velocidad " + currentSpeed + " - trigger WALK");
+            animator.SetBool("isRunning", isRunning && moveInput.y > 0);
+
+            if (moveInput.y > 0)
                 PlayImmediate("walk");
-            }
             else if (moveInput.y < 0)
-            {
-                Debug.Log("Backwards");
                 PlayImmediate("back");
-            }
             else if (moveInput.x < 0)
-            {
-                Debug.Log("Turning Left");
                 PlayImmediate("turnLeft");
-            }
             else if (moveInput.x > 0)
-            {
-                Debug.Log("Turning Right");
                 PlayImmediate("turnRight");
-            }
         }
         else
         {
-            Debug.Log("Idle state (sin movimiento)");
+            animator.SetBool("isRunning", false);
             PlayImmediate("idle");
         }
     }
@@ -109,7 +94,6 @@ public class EllisTankController : MonoBehaviour
         {
             isJumping = true;
             jumpTimer = 2.20f;
-            Debug.Log("JUMP start → trigger JUMP");
             PlayImmediate("jump");
             Invoke(nameof(ApplyJumpForce), 0.5f);
         }
@@ -118,7 +102,6 @@ public class EllisTankController : MonoBehaviour
     private void ApplyJumpForce()
     {
         velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-        Debug.Log("JUMP force aplicada");
     }
 
     private void HandleJump()
@@ -129,7 +112,6 @@ public class EllisTankController : MonoBehaviour
             if (jumpTimer <= 0)
             {
                 isJumping = false;
-                Debug.Log("JUMP terminado → vuelve a IDLE");
                 PlayImmediate("idle");
             }
         }
@@ -137,16 +119,7 @@ public class EllisTankController : MonoBehaviour
 
     private void PlayImmediate(string trigger)
     {
-        if (animator == null)
-        {
-            Debug.LogWarning("Animator no asignado");
-            return;
-        }
-
-        if (trigger == lastTrigger) return;
-
-        // Log trigger que se dispara
-        Debug.Log("Trigger → " + trigger);
+        if (animator == null || trigger == lastTrigger) return;
 
         animator.Rebind();
         animator.Update(0f);
@@ -157,7 +130,6 @@ public class EllisTankController : MonoBehaviour
         animator.ResetTrigger("turnLeft");
         animator.ResetTrigger("turnRight");
         animator.ResetTrigger("jump");
-        animator.ResetTrigger("run");
 
         animator.SetTrigger(trigger);
         lastTrigger = trigger;
