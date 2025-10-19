@@ -16,8 +16,8 @@ public class EllisTankController : MonoBehaviour
 
     private Vector2 moveInput;
     private Vector3 velocity;
-    private bool isGrounded;
     private bool isJumping;
+    private float jumpTimer;
     private string lastTrigger = "";
 
     private void Awake()
@@ -32,7 +32,7 @@ public class EllisTankController : MonoBehaviour
         controls.Player.Enable();
         controls.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
         controls.Player.Move.canceled += _ => moveInput = Vector2.zero;
-        controls.Player.Jump.performed += _ => Jump();
+        controls.Player.Jump.performed += _ => StartJump();
     }
 
     private void OnDisable()
@@ -43,31 +43,25 @@ public class EllisTankController : MonoBehaviour
     private void Update()
     {
         Move();
+        HandleJump();
     }
 
     private void Move()
     {
-        isGrounded = controller.isGrounded;
-        if (isGrounded && velocity.y < 0)
-        {
+        bool isGrounded = controller.isGrounded;
+        if (isGrounded && velocity.y < 0 && !isJumping)
             velocity.y = -2f;
-            isJumping = false;
-        }
 
-        // Rotación tanque
         transform.Rotate(Vector3.up * moveInput.x * rotateSpeed * Time.deltaTime);
 
-        // Avance / retroceso
         Vector3 forward = transform.forward * moveInput.y * moveSpeed;
         controller.Move(forward * Time.deltaTime);
 
-        // Gravedad
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
 
         if (isJumping) return;
 
-        // Selección de animación inmediata
         if (moveInput.y > 0.1f)
             PlayImmediate("walk");
         else if (moveInput.y < -0.1f)
@@ -80,22 +74,40 @@ public class EllisTankController : MonoBehaviour
             PlayImmediate("idle");
     }
 
-    private void Jump()
+    private void StartJump()
     {
-        if (isGrounded)
+        if (!isJumping)
         {
             isJumping = true;
-            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            jumpTimer = 2.20f; // duración total del salto
             PlayImmediate("jump");
+            Invoke(nameof(ApplyJumpForce), 0.5f); // aplica fuerza vertical a los 0.45 s
+        }
+    }
+
+    private void ApplyJumpForce()
+    {
+        velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+    }
+
+    private void HandleJump()
+    {
+        if (isJumping)
+        {
+            jumpTimer -= Time.deltaTime;
+            if (jumpTimer <= 0)
+            {
+                isJumping = false;
+                PlayImmediate("idle");
+            }
         }
     }
 
     private void PlayImmediate(string trigger)
     {
-        if (animator == null) return;
-        if (trigger == lastTrigger) return; // evita spam innecesario
+        if (animator == null || trigger == lastTrigger) return;
 
-        animator.Rebind(); // fuerza reset de animación en curso
+        animator.Rebind();
         animator.Update(0f);
 
         animator.ResetTrigger("idle");
