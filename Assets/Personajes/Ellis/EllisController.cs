@@ -19,6 +19,7 @@ public class EllisTankController : MonoBehaviour
     private Vector3 velocity;
     private bool isJumping;
     private bool isRunning;
+    private bool isPilling;
     private float jumpTimer;
     private string lastTrigger = "";
 
@@ -32,11 +33,15 @@ public class EllisTankController : MonoBehaviour
     private void OnEnable()
     {
         controls.Player.Enable();
+
         controls.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
         controls.Player.Move.canceled += _ => moveInput = Vector2.zero;
+
         controls.Player.Jump.performed += _ => StartJump();
         controls.Player.Run.started += _ => isRunning = true;
         controls.Player.Run.canceled += _ => isRunning = false;
+
+        controls.Player.Pill.performed += _ => StartPill();
     }
 
     private void OnDisable()
@@ -46,6 +51,7 @@ public class EllisTankController : MonoBehaviour
 
     private void Update()
     {
+        if (isPilling) return; // bloqueo completo durante Pill
         Move();
         HandleJump();
     }
@@ -67,7 +73,6 @@ public class EllisTankController : MonoBehaviour
 
         if (isJumping) return;
 
-        // Si hay movimiento
         if (moveInput.magnitude > 0.1f)
         {
             animator.SetBool("isRunning", isRunning && moveInput.y > 0);
@@ -90,7 +95,7 @@ public class EllisTankController : MonoBehaviour
 
     private void StartJump()
     {
-        if (!isJumping)
+        if (!isJumping && !isPilling)
         {
             isJumping = true;
             jumpTimer = 2.20f;
@@ -117,6 +122,24 @@ public class EllisTankController : MonoBehaviour
         }
     }
 
+    // --- Animación Pill (bloquea 6.4 s) ---
+    private void StartPill()
+    {
+        if (isPilling || isJumping) return;
+
+        isPilling = true;
+        PlayImmediate("pill");
+
+        // Bloquea control hasta que pasen exactamente 6.4 segundos
+        Invoke(nameof(EndPill), 6.4f);
+    }
+
+    private void EndPill()
+    {
+        isPilling = false;
+        PlayImmediate("idle");
+    }
+
     private void PlayImmediate(string trigger)
     {
         if (animator == null || trigger == lastTrigger) return;
@@ -130,6 +153,7 @@ public class EllisTankController : MonoBehaviour
         animator.ResetTrigger("turnLeft");
         animator.ResetTrigger("turnRight");
         animator.ResetTrigger("jump");
+        animator.ResetTrigger("pill");
 
         animator.SetTrigger(trigger);
         lastTrigger = trigger;
