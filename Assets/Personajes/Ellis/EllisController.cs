@@ -8,7 +8,6 @@ public class EllisTankController : MonoBehaviour
     private PlayerControl controls;
     private CharacterController controller;
     private Animator animator;
-    private AudioSource audioSource;
 
     [Header("Movimiento")]
     public float walkSpeed = 2f;
@@ -18,17 +17,15 @@ public class EllisTankController : MonoBehaviour
     public float jumpHeight = 1.2f;
 
     [Header("Sonidos")]
-    public AudioClip walkClip;
-    public AudioClip backClip;
+    public AudioClip walkLoop;          // usado también para correr
+    public AudioClip backLoop;
     public AudioClip jumpClip;
-    public AudioClip pillClip;
+    public List<AudioClip> pillClips;
     public AudioClip idleLoop;
     public List<AudioClip> focusClips;
 
-    [Header("Tiempos (segundos)")]
-    public float walkStepInterval = 0.6f;
-    public float runStepInterval = 0.35f;
-    public float idleLoopInterval = 4f;
+    [Header("Duraciones (segundos)")]
+    public float pillDuration = 6.4f;
     public float focusInterval = 8f;
 
     private Vector2 moveInput;
@@ -38,20 +35,31 @@ public class EllisTankController : MonoBehaviour
     private bool isPilling;
     private bool isFocused;
     private float jumpTimer;
-    private float stepTimer;
-    private float idleTimer;
     private float focusTimer;
     private string lastTrigger = "";
+
+    // Canales de audio separados
+    private AudioSource movementAudio;
+    private AudioSource actionAudio;
+    private AudioSource idleAudio;
 
     private void Awake()
     {
         controls = new PlayerControl();
         controller = GetComponent<CharacterController>();
         animator = GetComponentInChildren<Animator>();
-        audioSource = GetComponent<AudioSource>();
 
-        if (audioSource == null)
-            audioSource = gameObject.AddComponent<AudioSource>();
+        movementAudio = gameObject.AddComponent<AudioSource>();
+        movementAudio.loop = true;
+        movementAudio.playOnAwake = false;
+
+        actionAudio = gameObject.AddComponent<AudioSource>();
+        actionAudio.loop = false;
+        actionAudio.playOnAwake = false;
+
+        idleAudio = gameObject.AddComponent<AudioSource>();
+        idleAudio.loop = true;
+        idleAudio.playOnAwake = false;
     }
 
     private void OnEnable()
@@ -60,17 +68,13 @@ public class EllisTankController : MonoBehaviour
 
         controls.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
         controls.Player.Move.canceled += _ => moveInput = Vector2.zero;
-
         controls.Player.Jump.performed += _ => StartJump();
         controls.Player.Run.started += _ => isRunning = true;
         controls.Player.Run.canceled += _ => isRunning = false;
         controls.Player.Pill.performed += _ => StartPill();
     }
 
-    private void OnDisable()
-    {
-        controls.Player.Disable();
-    }
+    private void OnDisable() => controls.Player.Disable();
 
     private void Update()
     {
@@ -96,47 +100,48 @@ public class EllisTankController : MonoBehaviour
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
 
-        if (moveInput.y != 0 && isGrounded && !isJumping)
-        {
-            stepTimer -= Time.deltaTime;
-            if (stepTimer <= 0)
-            {
-                if (moveInput.y > 0)
-                    PlayStepSound(walkClip, isRunning);
-                else if (moveInput.y < 0)
-                    PlayStepSound(backClip, false);
-
-                stepTimer = isRunning ? runStepInterval : walkStepInterval;
-            }
-        }
-
         if (isJumping) return;
 
         if (moveInput.magnitude > 0.1f)
         {
             animator.SetBool("isRunning", isRunning && moveInput.y > 0);
 
+            // --- audio de movimiento continuo ---
             if (moveInput.y > 0)
-                PlayImmediate("walk");
+                SetMovementLoop(walkLoop, isRunning ? 1.35f : 1f);
             else if (moveInput.y < 0)
-                PlayImmediate("back");
-            else if (moveInput.x < 0)
-                PlayImmediate("turnLeft");
-            else if (moveInput.x > 0)
-                PlayImmediate("turnRight");
+                SetMovementLoop(backLoop, 1f);
+            else
+                StopMovementLoop();
+
+            if (moveInput.y > 0) PlayImmediate("walk");
+            else if (moveInput.y < 0) PlayImmediate("back");
+            else if (moveInput.x < 0) PlayImmediate("turnLeft");
+            else if (moveInput.x > 0) PlayImmediate("turnRight");
         }
         else
         {
             animator.SetBool("isRunning", false);
+            StopMovementLoop();
             PlayImmediate("idle");
         }
     }
 
-    private void PlayStepSound(AudioClip clip, bool fast)
+    private void SetMovementLoop(AudioClip clip, float pitch)
     {
         if (clip == null) return;
-        audioSource.pitch = fast ? 1.5f : 1f;
-        audioSource.PlayOneShot(clip);
+        if (movementAudio.clip == clip && movementAudio.isPlaying && Mathf.Approximately(movementAudio.pitch, pitch)) return;
+
+        movementAudio.clip = clip;
+        movementAudio.pitch = pitch;
+        movementAudio.volume = 1f;
+        movementAudio.Play();
+    }
+
+    private void StopMovementLoop()
+    {
+        if (movementAudio.isPlaying)
+            movementAudio.Stop();
     }
 
     private void StartJump()
@@ -147,7 +152,7 @@ public class EllisTankController : MonoBehaviour
             jumpTimer = 2.20f;
             PlayImmediate("jump");
             Invoke(nameof(ApplyJumpForce), 0.5f);
-            if (jumpClip) audioSource.PlayOneShot(jumpClip);
+            if (jumpClip) actionAudio.PlayOneShot(jumpClip);
         }
     }
 
@@ -158,25 +163,37 @@ public class EllisTankController : MonoBehaviour
 
     private void HandleJump()
     {
-        if (isJumping)
+        if (!isJumping) return;
+        jumpTimer -= Time.deltaTime;
+        if (jumpTimer <= 0)
         {
-            jumpTimer -= Time.deltaTime;
-            if (jumpTimer <= 0)
-            {
-                isJumping = false;
-                PlayImmediate("idle");
-            }
+            isJumping = false;
+            PlayImmediate("idle");
         }
     }
 
+    // --- PILL controlado ---
     private void StartPill()
     {
         if (isPilling || isJumping) return;
-
         isPilling = true;
         PlayImmediate("pill");
-        if (pillClip) audioSource.PlayOneShot(pillClip);
-        Invoke(nameof(EndPill), 6.4f);
+        PlayPillClips();
+        Invoke(nameof(EndPill), pillDuration);
+    }
+
+    private void PlayPillClips()
+    {
+        if (pillClips == null || pillClips.Count == 0) return;
+        foreach (var clip in pillClips)
+        {
+            if (clip == null) continue;
+            AudioSource s = gameObject.AddComponent<AudioSource>();
+            s.clip = clip;
+            s.loop = false;
+            s.Play();
+            Destroy(s, clip.length + 0.1f);
+        }
     }
 
     private void EndPill()
@@ -185,36 +202,42 @@ public class EllisTankController : MonoBehaviour
         PlayImmediate("idle");
     }
 
-    // --- FOCUS: llamado manualmente desde otra lógica ---
+    // --- FOCUS manual ---
     public void TriggerFocus()
     {
         if (focusClips == null || focusClips.Count == 0) return;
         isFocused = true;
-        focusTimer = 0; // ejecuta uno inmediato
+        focusTimer = 0;
     }
 
     private void HandleFocusSound()
     {
         if (!isFocused) return;
-
         focusTimer -= Time.deltaTime;
         if (focusTimer <= 0)
         {
-            AudioClip clip = focusClips[Random.Range(0, focusClips.Count)];
-            audioSource.PlayOneShot(clip);
+            foreach (var clip in focusClips)
+            {
+                if (clip == null) continue;
+                AudioSource.PlayClipAtPoint(clip, transform.position, 1f);
+            }
             focusTimer = focusInterval;
         }
     }
 
     private void HandleIdleSound()
     {
-        if (moveInput.magnitude > 0.1f || isJumping || isPilling) return;
-
-        idleTimer -= Time.deltaTime;
-        if (idleTimer <= 0 && idleLoop != null)
+        if (moveInput.magnitude > 0.1f || isJumping || isPilling)
         {
-            audioSource.PlayOneShot(idleLoop);
-            idleTimer = idleLoopInterval;
+            if (idleAudio.isPlaying) idleAudio.Stop();
+            return;
+        }
+
+        if (idleLoop != null && !idleAudio.isPlaying)
+        {
+            idleAudio.clip = idleLoop;
+            idleAudio.loop = true;
+            idleAudio.Play();
         }
     }
 

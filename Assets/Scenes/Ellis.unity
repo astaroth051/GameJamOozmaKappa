@@ -239,6 +239,7 @@ GameObject:
   - component: {fileID: 657909394}
   - component: {fileID: 657909393}
   - component: {fileID: 657909395}
+  - component: {fileID: 657909396}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: Untagged
@@ -340,6 +341,102 @@ MonoBehaviour:
   stability: 0.95
   runRotationDamping: 0.5
   maxTiltAtRun: 5
+--- !u!82 &657909396
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 657909391}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: 29c0e6ac1c6590e4294512b400e5c04e, type: 3}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 1
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -868,6 +965,66 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1016877356421837637, guid: 196f83604794c0945a216813dd90d6de, type: 3}
+      propertyPath: runLoop
+      value: 
+      objectReference: {fileID: 8300000, guid: 254f2da3704dded47a72634d762bd350, type: 3}
+    - target: {fileID: 1016877356421837637, guid: 196f83604794c0945a216813dd90d6de, type: 3}
+      propertyPath: backClip
+      value: 
+      objectReference: {fileID: 8300000, guid: 254f2da3704dded47a72634d762bd350, type: 3}
+    - target: {fileID: 1016877356421837637, guid: 196f83604794c0945a216813dd90d6de, type: 3}
+      propertyPath: backLoop
+      value: 
+      objectReference: {fileID: 8300000, guid: 254f2da3704dded47a72634d762bd350, type: 3}
+    - target: {fileID: 1016877356421837637, guid: 196f83604794c0945a216813dd90d6de, type: 3}
+      propertyPath: idleLoop
+      value: 
+      objectReference: {fileID: 8300000, guid: 98c7eb0020ce0e6409eba66c57fb6ab6, type: 3}
+    - target: {fileID: 1016877356421837637, guid: 196f83604794c0945a216813dd90d6de, type: 3}
+      propertyPath: jumpClip
+      value: 
+      objectReference: {fileID: 8300000, guid: 561ea6996fb21754daf24e7ac96368e8, type: 3}
+    - target: {fileID: 1016877356421837637, guid: 196f83604794c0945a216813dd90d6de, type: 3}
+      propertyPath: pillClip
+      value: 
+      objectReference: {fileID: 8300000, guid: be6d1ffc5e05e884d9ac384d2c4c1f57, type: 3}
+    - target: {fileID: 1016877356421837637, guid: 196f83604794c0945a216813dd90d6de, type: 3}
+      propertyPath: walkClip
+      value: 
+      objectReference: {fileID: 8300000, guid: 254f2da3704dded47a72634d762bd350, type: 3}
+    - target: {fileID: 1016877356421837637, guid: 196f83604794c0945a216813dd90d6de, type: 3}
+      propertyPath: walkLoop
+      value: 
+      objectReference: {fileID: 8300000, guid: 254f2da3704dded47a72634d762bd350, type: 3}
+    - target: {fileID: 1016877356421837637, guid: 196f83604794c0945a216813dd90d6de, type: 3}
+      propertyPath: pillClips.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1016877356421837637, guid: 196f83604794c0945a216813dd90d6de, type: 3}
+      propertyPath: focusClips.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1016877356421837637, guid: 196f83604794c0945a216813dd90d6de, type: 3}
+      propertyPath: pillClips.Array.data[0]
+      value: 
+      objectReference: {fileID: 8300000, guid: be6d1ffc5e05e884d9ac384d2c4c1f57, type: 3}
+    - target: {fileID: 1016877356421837637, guid: 196f83604794c0945a216813dd90d6de, type: 3}
+      propertyPath: pillClips.Array.data[1]
+      value: 
+      objectReference: {fileID: 8300000, guid: 233afb41f3e37ed46bb3744a07fd4f76, type: 3}
+    - target: {fileID: 1016877356421837637, guid: 196f83604794c0945a216813dd90d6de, type: 3}
+      propertyPath: focusClips.Array.data[0]
+      value: 
+      objectReference: {fileID: 8300000, guid: 879d8465e4911af439fd1a3609ebb299, type: 3}
+    - target: {fileID: 1016877356421837637, guid: 196f83604794c0945a216813dd90d6de, type: 3}
+      propertyPath: focusClips.Array.data[1]
+      value: 
+      objectReference: {fileID: 8300000, guid: 52b2bc8f65abacb4188760bed96ef650, type: 3}
+    - target: {fileID: 1016877356421837637, guid: 196f83604794c0945a216813dd90d6de, type: 3}
+      propertyPath: focusClips.Array.data[2]
+      value: 
+      objectReference: {fileID: 8300000, guid: 233afb41f3e37ed46bb3744a07fd4f76, type: 3}
     - target: {fileID: 2952517163462321458, guid: 196f83604794c0945a216813dd90d6de, type: 3}
       propertyPath: m_Name
       value: EllisT-Pose
