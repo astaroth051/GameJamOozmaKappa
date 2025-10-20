@@ -17,13 +17,9 @@ public class PostProcessController : MonoBehaviour
         volume.profile.TryGet(out chroma);
         volume.profile.TryGet(out colorAdjust);
 
-        // Apagar todos los efectos al inicio
         ResetAllEffects();
-
-        Debug.Log("✅ PostProcessController inicializado y efectos apagados.");
     }
 
-    // --- Efecto de píldora ---
     public void PillEffect()
     {
         StopAllCoroutines();
@@ -36,13 +32,9 @@ public class PostProcessController : MonoBehaviour
         float bloomDuration = 5f;
         float colorFadeDuration = 15f;
 
-        // Asegura que empiece desde cero
         ResetAllEffects();
-
-        Debug.Log("💫 Iniciando efecto de píldora...");
         EnableOverrides(true);
 
-        // Subida progresiva
         while (time < bloomDuration)
         {
             time += Time.deltaTime;
@@ -57,7 +49,6 @@ public class PostProcessController : MonoBehaviour
 
         yield return new WaitForSeconds(1f);
 
-        // Desvanecimiento progresivo
         time = 0f;
         while (time < colorFadeDuration)
         {
@@ -71,14 +62,10 @@ public class PostProcessController : MonoBehaviour
             yield return null;
         }
 
-        // Restaurar al final
         ResetAllEffects();
         EnableOverrides(false);
-
-        Debug.Log("✅ Efectos restaurados y desactivados.");
     }
 
-    // --- Apaga todos los efectos visualmente ---
     private void ResetAllEffects()
     {
         if (bloom != null) bloom.intensity.value = 0f;
@@ -86,7 +73,6 @@ public class PostProcessController : MonoBehaviour
         if (colorAdjust != null) colorAdjust.saturation.value = 0f;
     }
 
-    // --- Habilita o deshabilita los overrides para que no se apliquen ---
     private void EnableOverrides(bool state)
     {
         if (bloom != null) bloom.active = state;
