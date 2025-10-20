@@ -1626,8 +1626,8 @@ MonoBehaviour:
   maxPillsBeforeOverdose: 3
   pillDecayRate: 0.05
   volume: {fileID: 365897761}
-  heartbeatAudio: {fileID: 1725797145}
-  breathingAudio: {fileID: 1725797146}
+  heartbeatAudio: {fileID: 1725797146}
+  breathingAudio: {fileID: 1725797145}
   anxietyBar: {fileID: 1137354323}
   pillBar: {fileID: 1896856821}
   slowMotionScale: 0.6

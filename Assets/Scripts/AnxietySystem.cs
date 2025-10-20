@@ -204,20 +204,32 @@ public class AnxietySystem : MonoBehaviour
         isFlashingPill = false;
     }
 
+    // --- Efectos visuales suaves ---
     private void UpdateVisuals()
     {
         float t = anxietyLevel / maxAnxiety;
         float easedT = Mathf.SmoothStep(0f, 1f, t);
 
+        // Viñeta siempre presente (oscurece más con ansiedad)
         if (vignette != null)
             vignette.intensity.value = Mathf.Lerp(0f, 0.8f, easedT);
 
-        // 🔹 Solo afecta saturación base si no hay flash de píldora activo
+        // 🔹 Desaturación: solo a partir del 80 % de ansiedad
         if (colorAdjust != null && !isFlashingPill)
         {
-            colorAdjust.saturation.value = Mathf.Lerp(0f, -100f, Mathf.Pow(easedT, 1.5f));
+            if (anxietyLevel >= 80f)
+            {
+                float localT = Mathf.InverseLerp(80f, 100f, anxietyLevel);
+                colorAdjust.saturation.value = Mathf.Lerp(0f, -100f, Mathf.Pow(localT, 1.5f));
+            }
+            else
+            {
+                // vuelve progresivamente a 0 cuando baja del 80 %
+                colorAdjust.saturation.value = Mathf.Lerp(colorAdjust.saturation.value, 0f, Time.deltaTime * 3f);
+            }
         }
 
+        // Film Grain: desde 30% en adelante
         if (filmGrain != null)
         {
             if (anxietyLevel > 30f)
@@ -233,6 +245,7 @@ public class AnxietySystem : MonoBehaviour
             }
         }
     }
+
 
     private void UpdateAudio()
     {
