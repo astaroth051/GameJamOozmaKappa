@@ -175,13 +175,39 @@ public class EllisTankController : MonoBehaviour
     // --- PILL controlado ---
     private void StartPill()
     {
-        FindObjectOfType<PostProcessController>()?.PillEffect();
-        if (isPilling || isJumping) return;
+        if (isPilling || isJumping)
+        {
+            Debug.LogWarning("❌ StartPill cancelado: ya está tomando píldora o saltando.");
+            return;
+        }
+
+        Debug.Log("💊 Iniciando animación de píldora...");
         isPilling = true;
         PlayImmediate("pill");
+
+        // sincroniza con animación
+        Invoke(nameof(TriggerPillEffect), 0.15f);
+
         PlayPillClips();
         Invoke(nameof(EndPill), pillDuration);
     }
+
+    private void TriggerPillEffect()
+    {
+        Debug.Log("🔍 Buscando PostProcessController en escena...");
+        var post = FindObjectOfType<PostProcessController>();
+        if (post != null)
+        {
+            Debug.Log("✅ PostProcessController encontrado, ejecutando efecto...");
+            post.PillEffect();
+        }
+        else
+        {
+            Debug.LogError("❌ No se encontró PostProcessController en la escena.");
+        }
+    }
+
+
 
     private void PlayPillClips()
     {
