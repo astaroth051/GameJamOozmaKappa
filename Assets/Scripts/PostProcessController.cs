@@ -50,7 +50,7 @@ public class PostProcessController : MonoBehaviour
 
             if (bloom != null) bloom.intensity.value = Mathf.Lerp(0f, 10f, t);
             if (chroma != null) chroma.intensity.value = Mathf.Lerp(0f, 0.25f, t);
-            if (colorAdjust != null) colorAdjust.saturation.value = Mathf.Lerp(0f, -50f, t);
+            if (colorAdjust != null) colorAdjust.saturation.value = Mathf.Lerp(0f, -100f, t);
 
             yield return null;
         }
