@@ -175,6 +175,7 @@ public class EllisTankController : MonoBehaviour
     // --- PILL controlado ---
     private void StartPill()
     {
+        FindObjectOfType<PostProcessController>()?.PillEffect();
         if (isPilling || isJumping) return;
         isPilling = true;
         PlayImmediate("pill");
