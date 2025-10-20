@@ -8,7 +8,7 @@ using System.Collections;
 public class AnxietySystem : MonoBehaviour
 {
     [Header("Raycast")]
-    [SerializeField] private Transform eyes;                 // Asigna aquí tu Empty "EyePoint"
+    [SerializeField] private Transform eyes;
     [SerializeField] private float viewDistance = 8f;
     [SerializeField] private float viewAngle = 45f;
     [SerializeField] private string anxietyTag = "Ansiedad";
@@ -17,15 +17,17 @@ public class AnxietySystem : MonoBehaviour
     [Header("Valores de ansiedad")]
     [Range(0, 100)][SerializeField] private float anxietyLevel = 0f;
     [SerializeField] private float anxietyIncreaseRate = 10f;
-    [SerializeField] private float anxietyDecreaseRate = 5f;
+    [SerializeField] private float anxietyDecreaseRate = 2.5f;
     [SerializeField] private float maxAnxiety = 100f;
     private bool isOverwhelmed = false;
 
     [Header("Píldoras")]
+    [SerializeField] private float pillDecaySeconds = 15f;
     [SerializeField] private float pillReduction = 30f;
     [SerializeField] private int maxPillsBeforeOverdose = 3;
-    [SerializeField] private float pillWindowSeconds = 15f;
-    private int pillsTaken = 0;
+    [SerializeField] private float pillDecayRate = 0.05f;
+    private float currentPillLevel = 0f;
+    private bool isFlashingPill = false; // evita conflictos con ansiedad
     private float pillTimer = 0f;
 
     [Header("Efectos visuales (URP Volume)")]
@@ -33,6 +35,7 @@ public class AnxietySystem : MonoBehaviour
     private Vignette vignette;
     private ColorAdjustments colorAdjust;
     private Bloom bloom;
+    private FilmGrain filmGrain;
 
     [Header("Efectos auditivos")]
     [SerializeField] private AudioSource heartbeatAudio;
@@ -40,6 +43,7 @@ public class AnxietySystem : MonoBehaviour
 
     [Header("Interfaz")]
     [SerializeField] private Scrollbar anxietyBar;
+    [SerializeField] private Scrollbar pillBar;
 
     [Header("Distorsión temporal")]
     [SerializeField] private float slowMotionScale = 0.6f;
@@ -58,14 +62,28 @@ public class AnxietySystem : MonoBehaviour
             volume.profile.TryGet(out vignette);
             volume.profile.TryGet(out colorAdjust);
             volume.profile.TryGet(out bloom);
+            volume.profile.TryGet(out filmGrain);
         }
 
         ResetVisuals();
 
-        if (heartbeatAudio != null) heartbeatAudio.volume = 0f;
-        if (breathingAudio != null) breathingAudio.volume = 0f;
+        if (heartbeatAudio != null)
+        {
+            heartbeatAudio.volume = 0f;
+            heartbeatAudio.loop = true;
+            heartbeatAudio.Play();
+        }
 
-        Debug.Log("✅ AnxietySystem inicializado correctamente. Capa visible: " + LayerMask.LayerToName(Mathf.RoundToInt(Mathf.Log(detectionMask.value, 2))));
+        if (breathingAudio != null)
+        {
+            breathingAudio.volume = 0f;
+            breathingAudio.loop = true;
+            breathingAudio.Play();
+        }
+
+        if (pillBar != null) pillBar.size = 0f;
+
+        Debug.Log("✅ AnxietySystem inicializado correctamente.");
     }
 
     private void Update()
@@ -74,10 +92,10 @@ public class AnxietySystem : MonoBehaviour
         UpdateAnxiety();
         UpdateVisuals();
         UpdateAudio();
+        UpdatePillDecay();
         UpdateUI();
     }
 
-    // --- Detecta objetos "Ansiedad" frente al jugador ---
     private void HandleRaycast()
     {
         if (eyes == null) return;
@@ -85,34 +103,15 @@ public class AnxietySystem : MonoBehaviour
         Ray ray = new Ray(eyes.position, eyes.forward);
         bool hitAnxiety = false;
 
-        // Dispara el raycast solo en la capa especificada
         if (Physics.Raycast(ray, out RaycastHit hit, viewDistance, detectionMask))
         {
             Vector3 dirToTarget = (hit.point - eyes.position).normalized;
             float angle = Vector3.Angle(eyes.forward, dirToTarget);
 
-            // Detecta solo si está dentro del campo visual y tiene el tag correcto
             if (angle < viewAngle && hit.collider.CompareTag(anxietyTag))
-            {
                 hitAnxiety = true;
-
-                int hitLayer = hit.collider.gameObject.layer;
-                string layerName = LayerMask.LayerToName(hitLayer);
-
-                Debug.DrawRay(eyes.position, eyes.forward * viewDistance, Color.red);
-                Debug.Log($"👁️ Raycast detectó '{hit.collider.name}' en la capa '{layerName}'.");
-            }
-            else
-            {
-                Debug.DrawRay(eyes.position, eyes.forward * viewDistance, Color.green);
-            }
-        }
-        else
-        {
-            Debug.DrawRay(eyes.position, eyes.forward * viewDistance, Color.green);
         }
 
-        // Ajuste de nivel de ansiedad
         if (hitAnxiety)
             anxietyLevel += anxietyIncreaseRate * Time.deltaTime;
         else
@@ -121,80 +120,135 @@ public class AnxietySystem : MonoBehaviour
         anxietyLevel = Mathf.Clamp(anxietyLevel, 0, maxAnxiety);
     }
 
-    // --- Control de ansiedad y sobredosis ---
     private void UpdateAnxiety()
     {
-        pillTimer -= Time.deltaTime;
-        if (pillTimer <= 0)
-        {
-            pillsTaken = 0;
-            pillTimer = 0;
-        }
-
         if (anxietyLevel >= maxAnxiety && !isOverwhelmed)
         {
             isOverwhelmed = true;
-            StartCoroutine(RestartScene());
+            StartCoroutine(FinalBloomBeforeRestart());
         }
 
         if (anxietyLevel >= 80f && Time.timeScale == 1f)
             StartCoroutine(SlowMotion());
     }
 
-    // --- Llamado desde EllisTankController al tomar píldora ---
     public void TakePill()
     {
+        StartCoroutine(DelayedPillEffect());
+    }
+
+    private IEnumerator DelayedPillEffect()
+    {
+        yield return new WaitForSeconds(5f);
+
         anxietyLevel -= pillReduction;
         anxietyLevel = Mathf.Clamp(anxietyLevel, 0, maxAnxiety);
-        pillsTaken++;
-        pillTimer = pillWindowSeconds;
 
-        if (pillsTaken >= maxPillsBeforeOverdose)
+        currentPillLevel += 1f / maxPillsBeforeOverdose;
+        currentPillLevel = Mathf.Clamp01(currentPillLevel);
+
+        if (pillBar != null)
+            pillBar.size = currentPillLevel;
+
+        // 🔄 Flash químico (-80 a 0)
+        if (colorAdjust != null && !isFlashingPill)
+            StartCoroutine(PillVisualFlash());
+
+        if (currentPillLevel >= 1f)
             StartCoroutine(OverdoseEffect());
     }
 
-    // --- Efectos visuales ---
-    private void UpdateVisuals()
+    private void UpdatePillDecay()
     {
-        float t = anxietyLevel / maxAnxiety;
+        if (currentPillLevel > 0)
+        {
+            currentPillLevel -= pillDecayRate * Time.deltaTime / pillDecaySeconds;
+            currentPillLevel = Mathf.Max(0f, currentPillLevel);
 
-        if (vignette != null)
-        {
-            vignette.active = true;
-            vignette.intensity.value = Mathf.Lerp(0f, 0.5f, t);
-        }
-
-        // Desactivado por defecto, se puede usar más adelante
-        if (colorAdjust != null && anxietyLevel > 30f) // Solo activa después del 30% de ansiedad
-        {
-            colorAdjust.active = true;
-            colorAdjust.saturation.value = Mathf.Lerp(0f, -60f, t);
-        }
-        else if (colorAdjust != null && anxietyLevel <= 30f)
-        {
-            colorAdjust.active = false;
+            if (pillBar != null)
+                pillBar.size = currentPillLevel;
         }
     }
 
-    // --- Efectos auditivos ---
+    // --- Flash químico: pantalla desaturada (-80) y retorno progresivo ---
+    private IEnumerator PillVisualFlash()
+    {
+        isFlashingPill = true;
+
+        float time = 0f;
+        float duration = 1.8f;
+        float startSat = colorAdjust.saturation.value;
+
+        // baja a -80 rápidamente
+        while (time < duration / 2f)
+        {
+            time += Time.deltaTime;
+            float t = time / (duration / 2f);
+            colorAdjust.saturation.value = Mathf.Lerp(startSat, -80f, t);
+            yield return null;
+        }
+
+        // breve pausa en -80
+        yield return new WaitForSeconds(0.3f);
+
+        // vuelve suavemente al valor base
+        time = 0f;
+        while (time < duration)
+        {
+            time += Time.deltaTime;
+            float t = time / duration;
+            colorAdjust.saturation.value = Mathf.Lerp(-80f, 0f, Mathf.SmoothStep(0f, 1f, t));
+            yield return null;
+        }
+
+        isFlashingPill = false;
+    }
+
+    private void UpdateVisuals()
+    {
+        float t = anxietyLevel / maxAnxiety;
+        float easedT = Mathf.SmoothStep(0f, 1f, t);
+
+        if (vignette != null)
+            vignette.intensity.value = Mathf.Lerp(0f, 0.8f, easedT);
+
+        // 🔹 Solo afecta saturación base si no hay flash de píldora activo
+        if (colorAdjust != null && !isFlashingPill)
+        {
+            colorAdjust.saturation.value = Mathf.Lerp(0f, -100f, Mathf.Pow(easedT, 1.5f));
+        }
+
+        if (filmGrain != null)
+        {
+            if (anxietyLevel > 30f)
+            {
+                filmGrain.active = true;
+                float grainT = Mathf.InverseLerp(30f, 100f, anxietyLevel);
+                filmGrain.intensity.value = Mathf.Lerp(0f, 1f, grainT);
+            }
+            else
+            {
+                filmGrain.active = false;
+                filmGrain.intensity.value = 0f;
+            }
+        }
+    }
+
     private void UpdateAudio()
     {
         float t = anxietyLevel / maxAnxiety;
-
         if (heartbeatAudio != null)
         {
-            heartbeatAudio.volume = Mathf.Lerp(0f, 1f, t);
+            heartbeatAudio.volume = t > 0.5f ? Mathf.Lerp(0f, 1f, Mathf.InverseLerp(0.5f, 1f, t)) : 0f;
             heartbeatAudio.pitch = Mathf.Lerp(1f, 1.4f, t);
         }
-
         if (breathingAudio != null)
         {
-            breathingAudio.volume = Mathf.Lerp(0f, 0.8f, t);
+            breathingAudio.volume = t > 0.5f ? Mathf.Lerp(0f, 0.8f, Mathf.InverseLerp(0.5f, 1f, t)) : 0f;
             breathingAudio.pitch = Mathf.Lerp(1f, 1.2f, t);
         }
     }
 
-    // --- Actualiza barra UI ---
     private void UpdateUI()
     {
         if (anxietyBar != null)
@@ -203,16 +257,47 @@ public class AnxietySystem : MonoBehaviour
 
     private void ResetVisuals()
     {
-        if (vignette != null) vignette.intensity.value = 0f;
+        if (vignette != null)
+        {
+            vignette.active = true;
+            vignette.intensity.value = 0f;
+        }
+
         if (colorAdjust != null)
         {
+            colorAdjust.active = true;
             colorAdjust.saturation.value = 0f;
-            colorAdjust.active = false; // evita activación al inicio
         }
-        if (bloom != null) bloom.intensity.value = 0f;
+
+        if (bloom != null)
+        {
+            bloom.active = true;
+            bloom.intensity.value = 0f;
+        }
+
+        if (filmGrain != null)
+        {
+            filmGrain.active = true;
+            filmGrain.intensity.value = 0f;
+        }
     }
 
-    // --- Efectos adicionales ---
+    private IEnumerator FinalBloomBeforeRestart()
+    {
+        if (bloom != null) bloom.active = true;
+        float time = 0f, duration = 2f, startIntensity = bloom.intensity.value;
+
+        while (time < duration)
+        {
+            time += Time.deltaTime;
+            bloom.intensity.value = Mathf.Lerp(startIntensity, 50f, time / duration);
+            yield return null;
+        }
+
+        yield return new WaitForSeconds(0.5f);
+        StartCoroutine(RestartScene());
+    }
+
     private IEnumerator SlowMotion()
     {
         Time.timeScale = slowMotionScale;
@@ -227,7 +312,7 @@ public class AnxietySystem : MonoBehaviour
         while (time < 2f)
         {
             time += Time.deltaTime;
-            if (bloom != null) bloom.intensity.value = Mathf.Lerp(0f, 20f, time / 2f);
+            if (bloom != null) bloom.intensity.value = Mathf.Lerp(0f, 25f, time / 2f);
             yield return null;
         }
 
