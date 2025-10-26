@@ -1,6 +1,9 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
+using System.Collections;
+
 
 [RequireComponent(typeof(CharacterController))]
 public class EllisTankController : MonoBehaviour
@@ -17,7 +20,7 @@ public class EllisTankController : MonoBehaviour
     public float jumpHeight = 1.2f;
 
     [Header("Sonidos")]
-    public AudioClip walkLoop;          // usado también para correr
+    public AudioClip walkLoop;
     public AudioClip backLoop;
     public AudioClip jumpClip;
     public List<AudioClip> pillClips;
@@ -34,11 +37,11 @@ public class EllisTankController : MonoBehaviour
     private bool isRunning;
     private bool isPilling;
     private bool isFocused;
+    private bool isAnxietyFocus;
     private float jumpTimer;
     private float focusTimer;
     private string lastTrigger = "";
 
-    // Canales de audio separados
     private AudioSource movementAudio;
     private AudioSource actionAudio;
     private AudioSource idleAudio;
@@ -78,7 +81,7 @@ public class EllisTankController : MonoBehaviour
 
     private void Update()
     {
-        if (isPilling) return;
+        if (isPilling || isAnxietyFocus) return;
         Move();
         HandleJump();
         HandleIdleSound();
@@ -106,7 +109,6 @@ public class EllisTankController : MonoBehaviour
         {
             animator.SetBool("isRunning", isRunning && moveInput.y > 0);
 
-            // --- audio de movimiento continuo ---
             if (moveInput.y > 0)
                 SetMovementLoop(walkLoop, isRunning ? 1.35f : 1f);
             else if (moveInput.y < 0)
@@ -146,7 +148,7 @@ public class EllisTankController : MonoBehaviour
 
     private void StartJump()
     {
-        if (!isJumping && !isPilling)
+        if (!isJumping && !isPilling && !isAnxietyFocus)
         {
             isJumping = true;
             jumpTimer = 2.20f;
@@ -175,21 +177,13 @@ public class EllisTankController : MonoBehaviour
     // --- PILL controlado ---
     private void StartPill()
     {
-        if (isPilling || isJumping)
-        {
-     
+        if (isPilling || isJumping || isAnxietyFocus)
             return;
-        }
-
 
         isPilling = true;
         PlayImmediate("pill");
-
-        // sincroniza con animación
         Invoke(nameof(TriggerPillEffect), 0.15f);
-
         PlayPillClips();
-
         Invoke(nameof(EndPill), pillDuration);
     }
 
@@ -203,9 +197,6 @@ public class EllisTankController : MonoBehaviour
         if (anxiety != null)
             anxiety.TakePill();
     }
-
-
-
 
     private void PlayPillClips()
     {
@@ -252,7 +243,7 @@ public class EllisTankController : MonoBehaviour
 
     private void HandleIdleSound()
     {
-        if (moveInput.magnitude > 0.1f || isJumping || isPilling)
+        if (moveInput.magnitude > 0.1f || isJumping || isPilling || isAnxietyFocus)
         {
             if (idleAudio.isPlaying) idleAudio.Stop();
             return;
@@ -280,8 +271,47 @@ public class EllisTankController : MonoBehaviour
         animator.ResetTrigger("turnRight");
         animator.ResetTrigger("jump");
         animator.ResetTrigger("pill");
+        animator.ResetTrigger("focus");
 
         animator.SetTrigger(trigger);
         lastTrigger = trigger;
     }
+
+    // --- FOCUS automático cuando ansiedad llega al máximo ---
+    public void TriggerAnxietyFocus()
+    {
+        if (isAnxietyFocus) return;
+
+        isAnxietyFocus = true;
+        moveInput = Vector2.zero;
+        isRunning = false;
+        isPilling = false;
+
+        StopAllCoroutines();
+        movementAudio.Stop();
+        idleAudio.Stop();
+
+        PlayImmediate("focus");
+
+        if (focusClips != null && focusClips.Count > 0)
+            actionAudio.PlayOneShot(focusClips[0]);
+
+        StartCoroutine(RestartSceneAfterFocus());
+    }
+
+    private IEnumerator RestartSceneAfterFocus()
+    {
+        yield return new WaitForSeconds(5.5f);
+
+        var anxiety = FindObjectOfType<AnxietySystem>();
+        if (anxiety != null)
+            anxiety.StartCoroutine("FadeToBlack", 2f);
+
+        yield return new WaitForSeconds(1.5f);
+
+        UnityEngine.SceneManagement.SceneManager.LoadScene(
+            UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex
+        );
+    }
+
 }

@@ -12,15 +12,19 @@ public class AnxietySystem : MonoBehaviour
     [SerializeField] private float viewDistance = 8f;
     [SerializeField] private float viewAngle = 45f;
     [SerializeField] private string anxietyTag = "Ansiedad";
+    [SerializeField] private string shadowTag = "Sombra"; // nuevo
     [SerializeField] private LayerMask detectionMask;
+    [SerializeField] private LayerMask shadowMask;        // nuevo
 
     [Header("Valores de ansiedad")]
     [Range(0, 100)][SerializeField] private float anxietyLevel = 0f;
     [SerializeField] private float anxietyIncreaseRate = 10f;
+    [SerializeField] private float shadowAnxietyRate = 35f; // nuevo: subida fuerte
     [SerializeField] private float anxietyDecreaseRate = 2.5f;
     [SerializeField] private float maxAnxiety = 100f;
     private bool isOverwhelmed = false;
     private bool touchingAnxiety = false;
+    private bool touchingShadow = false; // nuevo
     private bool bloquearAnsiedad = false;
 
     [Header("Píldoras")]
@@ -89,17 +93,15 @@ public class AnxietySystem : MonoBehaviour
 
         if (pillBar != null) pillBar.size = 0f;
 
-        // Crear material para fade negro
         fadeMaterial = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
         fadeMaterial.color = new Color(0, 0, 0, 0);
-
-        Debug.Log("✅ AnxietySystem inicializado correctamente.");
     }
 
     private void Update()
     {
         HandleRaycast();
         HandleTriggerAnxiety();
+        HandleTriggerShadow(); // nuevo
         UpdateAnxiety();
         UpdateVisuals();
         UpdateAudio();
@@ -107,77 +109,131 @@ public class AnxietySystem : MonoBehaviour
         UpdateUI();
     }
 
-    // --- Aumenta ansiedad si se mira un objeto con tag o layer ---
+    // --- Raycast: ansiedad y sombras ---
     private void HandleRaycast()
     {
         if (eyes == null || bloquearAnsiedad) return;
 
         Ray ray = new Ray(eyes.position, eyes.forward);
         bool hitAnxiety = false;
+        bool hitShadow = false;
 
         if (Physics.Raycast(ray, out RaycastHit hit, viewDistance))
         {
             Vector3 dirToTarget = (hit.point - eyes.position).normalized;
             float angle = Vector3.Angle(eyes.forward, dirToTarget);
-            bool esAnsiedad = hit.collider.CompareTag(anxietyTag) || ((detectionMask.value & (1 << hit.collider.gameObject.layer)) != 0);
 
-            if (angle < viewAngle && esAnsiedad)
-                hitAnxiety = true;
+            bool esAnsiedad = hit.collider.CompareTag(anxietyTag) ||
+                              ((detectionMask.value & (1 << hit.collider.gameObject.layer)) != 0);
+
+            bool esSombra = hit.collider.CompareTag(shadowTag) ||
+                            ((shadowMask.value & (1 << hit.collider.gameObject.layer)) != 0);
+
+            if (angle < viewAngle)
+            {
+                if (esAnsiedad) hitAnxiety = true;
+                if (esSombra) hitShadow = true;
+            }
         }
 
-        if (hitAnxiety)
+        // Ansiedad normal
+        if (hitAnxiety && !hitShadow)
             anxietyLevel += anxietyIncreaseRate * Time.deltaTime;
-        else if (!touchingAnxiety)
+        // Sombra (más fuerte)
+        else if (hitShadow)
+            anxietyLevel += shadowAnxietyRate * Time.deltaTime;
+        // Calma
+        else if (!touchingAnxiety && !touchingShadow)
             anxietyLevel -= anxietyDecreaseRate * Time.deltaTime;
 
         anxietyLevel = Mathf.Clamp(anxietyLevel, 0, maxAnxiety);
     }
 
-    // --- Aumenta ansiedad si se está tocando un objeto con trigger ---
+    // --- Contacto con objetos de ansiedad ---
     private void HandleTriggerAnxiety()
     {
         if (bloquearAnsiedad) return;
-
         if (touchingAnxiety)
             anxietyLevel += anxietyIncreaseRate * 1.2f * Time.deltaTime;
-
         anxietyLevel = Mathf.Clamp(anxietyLevel, 0, maxAnxiety);
     }
 
-    private void OnTriggerEnter(Collider other)
+    // --- Contacto con sombras ---
+    private void HandleTriggerShadow()
     {
-        if (other.CompareTag(anxietyTag))
-            touchingAnxiety = true;
-        else if ((detectionMask.value & (1 << other.gameObject.layer)) != 0)
-            touchingAnxiety = true;
+        if (bloquearAnsiedad) return;
+        if (touchingShadow)
+            anxietyLevel += shadowAnxietyRate * 1.2f * Time.deltaTime; // sigue subiendo mientras se mantiene
+        anxietyLevel = Mathf.Clamp(anxietyLevel, 0, maxAnxiety);
     }
 
-    private void OnTriggerStay(Collider other)
-    {
-        if (other.CompareTag(anxietyTag))
-            touchingAnxiety = true;
-        else if ((detectionMask.value & (1 << other.gameObject.layer)) != 0)
-            touchingAnxiety = true;
-    }
+   // --- Detección por trigger (filtrando por Player) ---
+private void OnTriggerEnter(Collider other)
+{
+    // Solo reacciona si el que entra es el jugador
+    if (!other.CompareTag("Player")) return;
 
-    private void OnTriggerExit(Collider other)
+    if (other.CompareTag("Player"))
     {
-        if (other.CompareTag(anxietyTag))
-            touchingAnxiety = false;
-        else if ((detectionMask.value & (1 << other.gameObject.layer)) != 0)
-            touchingAnxiety = false;
+        if (other.TryGetComponent<Collider>(out Collider col))
+        {
+            if (col.gameObject.CompareTag(anxietyTag))
+                touchingAnxiety = true;
+            else if (col.gameObject.CompareTag(shadowTag))
+                touchingShadow = true;
+            else if ((detectionMask.value & (1 << col.gameObject.layer)) != 0)
+                touchingAnxiety = true;
+            else if ((shadowMask.value & (1 << col.gameObject.layer)) != 0)
+                touchingShadow = true;
+        }
     }
+}
+
+private void OnTriggerStay(Collider other)
+{
+    if (!other.CompareTag("Player")) return;
+
+    if (other.TryGetComponent<Collider>(out Collider col))
+    {
+        if (col.gameObject.CompareTag(anxietyTag))
+            touchingAnxiety = true;
+        else if (col.gameObject.CompareTag(shadowTag))
+            touchingShadow = true;
+        else if ((detectionMask.value & (1 << col.gameObject.layer)) != 0)
+            touchingAnxiety = true;
+        else if ((shadowMask.value & (1 << col.gameObject.layer)) != 0)
+            touchingShadow = true;
+    }
+}
+
+private void OnTriggerExit(Collider other)
+{
+    if (!other.CompareTag("Player")) return;
+
+    if (other.TryGetComponent<Collider>(out Collider col))
+    {
+        if (col.gameObject.CompareTag(anxietyTag))
+            touchingAnxiety = false;
+        else if (col.gameObject.CompareTag(shadowTag))
+            touchingShadow = false;
+        else if ((detectionMask.value & (1 << col.gameObject.layer)) != 0)
+            touchingAnxiety = false;
+        else if ((shadowMask.value & (1 << col.gameObject.layer)) != 0)
+            touchingShadow = false;
+    }
+}
+
 
     private void UpdateAnxiety()
     {
         if (anxietyLevel >= maxAnxiety && !isOverwhelmed)
         {
             isOverwhelmed = true;
-            StartCoroutine(FinalBloomBeforeRestart());
+            StartCoroutine(SlowMotion()); // ahora solo aquí
+            var ellis = FindObjectOfType<EllisTankController>();
+            if (ellis != null)
+                ellis.TriggerAnxietyFocus();
         }
-
-        if (anxietyLevel >= 80f && Time.timeScale == 1f)
-            StartCoroutine(SlowMotion());
     }
 
     public void TakePill()
@@ -202,8 +258,7 @@ public class AnxietySystem : MonoBehaviour
         currentPillLevel += 1f / maxPillsBeforeOverdose;
         currentPillLevel = Mathf.Clamp01(currentPillLevel);
 
-        if (pillBar != null)
-            pillBar.size = currentPillLevel;
+        if (pillBar != null) pillBar.size = currentPillLevel;
 
         if (colorAdjust != null && !isFlashingPill)
             StartCoroutine(PillVisualFlash());
@@ -224,9 +279,7 @@ public class AnxietySystem : MonoBehaviour
         {
             currentPillLevel -= pillDecayRate * Time.deltaTime / pillDecaySeconds;
             currentPillLevel = Mathf.Max(0f, currentPillLevel);
-
-            if (pillBar != null)
-                pillBar.size = currentPillLevel;
+            if (pillBar != null) pillBar.size = currentPillLevel;
         }
     }
 
@@ -319,45 +372,10 @@ public class AnxietySystem : MonoBehaviour
 
     private void ResetVisuals()
     {
-        if (vignette != null)
-        {
-            vignette.active = true;
-            vignette.intensity.value = 0f;
-        }
-
-        if (colorAdjust != null)
-        {
-            colorAdjust.active = true;
-            colorAdjust.saturation.value = 0f;
-        }
-
-        if (bloom != null)
-        {
-            bloom.active = true;
-            bloom.intensity.value = 0f;
-        }
-
-        if (filmGrain != null)
-        {
-            filmGrain.active = true;
-            filmGrain.intensity.value = 0f;
-        }
-    }
-
-    private IEnumerator FinalBloomBeforeRestart()
-    {
-        if (bloom != null) bloom.active = true;
-        float time = 0f, duration = 2f, startIntensity = bloom.intensity.value;
-
-        while (time < duration)
-        {
-            time += Time.deltaTime;
-            bloom.intensity.value = Mathf.Lerp(startIntensity, 50f, time / duration);
-            yield return null;
-        }
-
-        yield return new WaitForSeconds(0.5f);
-        StartCoroutine(RestartScene());
+        if (vignette != null) { vignette.active = true; vignette.intensity.value = 0f; }
+        if (colorAdjust != null) { colorAdjust.active = true; colorAdjust.saturation.value = 0f; }
+        if (bloom != null) { bloom.active = true; bloom.intensity.value = 0f; }
+        if (filmGrain != null) { filmGrain.active = true; filmGrain.intensity.value = 0f; }
     }
 
     private IEnumerator SlowMotion()
