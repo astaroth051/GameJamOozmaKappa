@@ -64,7 +64,6 @@ public class AnxietySystem : MonoBehaviour
         if (eyes == null)
         {
             eyes = transform;
-            Debug.LogWarning("⚠️ No se asignó un punto de vista (EyePoint). Usa un Empty en la cabeza.");
         }
 
         if (volume != null)
@@ -167,61 +166,77 @@ public class AnxietySystem : MonoBehaviour
         anxietyLevel = Mathf.Clamp(anxietyLevel, 0, maxAnxiety);
     }
 
-   // --- Detección por trigger (filtrando por Player) ---
-private void OnTriggerEnter(Collider other)
-{
-    // Solo reacciona si el que entra es el jugador
-    if (!other.CompareTag("Player")) return;
-
-    if (other.CompareTag("Player"))
+    // --- Detección por trigger (filtrando por Player) ---
+    // --- Detección por trigger (filtrando por Player y mostrando logs) ---
+    private void OnTriggerEnter(Collider other)
     {
+        if (!other.CompareTag("Player")) return;
+
         if (other.TryGetComponent<Collider>(out Collider col))
         {
-            if (col.gameObject.CompareTag(anxietyTag))
-                touchingAnxiety = true;
-            else if (col.gameObject.CompareTag(shadowTag))
+            if (col.gameObject.CompareTag(shadowTag))
+            {
                 touchingShadow = true;
-            else if ((detectionMask.value & (1 << col.gameObject.layer)) != 0)
+            }
+            else if (col.gameObject.CompareTag(anxietyTag))
+            {
                 touchingAnxiety = true;
+
+            }
             else if ((shadowMask.value & (1 << col.gameObject.layer)) != 0)
+            {
                 touchingShadow = true;
+            }
+            else if ((detectionMask.value & (1 << col.gameObject.layer)) != 0)
+            {
+                touchingAnxiety = true;
+            }
         }
     }
-}
 
-private void OnTriggerStay(Collider other)
-{
-    if (!other.CompareTag("Player")) return;
-
-    if (other.TryGetComponent<Collider>(out Collider col))
+    private void OnTriggerStay(Collider other)
     {
-        if (col.gameObject.CompareTag(anxietyTag))
-            touchingAnxiety = true;
-        else if (col.gameObject.CompareTag(shadowTag))
-            touchingShadow = true;
-        else if ((detectionMask.value & (1 << col.gameObject.layer)) != 0)
-            touchingAnxiety = true;
-        else if ((shadowMask.value & (1 << col.gameObject.layer)) != 0)
-            touchingShadow = true;
+        if (!other.CompareTag("Player")) return;
+
+        if (other.TryGetComponent<Collider>(out Collider col))
+        {
+            if (col.gameObject.CompareTag(shadowTag))
+            {
+                if (!touchingShadow)
+                    touchingShadow = true;
+            }
+            else if (col.gameObject.CompareTag(anxietyTag))
+            {
+                if (!touchingAnxiety)
+                    touchingAnxiety = true;
+            }
+        }
     }
-}
 
-private void OnTriggerExit(Collider other)
-{
-    if (!other.CompareTag("Player")) return;
-
-    if (other.TryGetComponent<Collider>(out Collider col))
+    private void OnTriggerExit(Collider other)
     {
-        if (col.gameObject.CompareTag(anxietyTag))
-            touchingAnxiety = false;
-        else if (col.gameObject.CompareTag(shadowTag))
-            touchingShadow = false;
-        else if ((detectionMask.value & (1 << col.gameObject.layer)) != 0)
-            touchingAnxiety = false;
-        else if ((shadowMask.value & (1 << col.gameObject.layer)) != 0)
-            touchingShadow = false;
+        if (!other.CompareTag("Player")) return;
+
+        if (other.TryGetComponent<Collider>(out Collider col))
+        {
+            if (col.gameObject.CompareTag(shadowTag))
+            {
+                touchingShadow = false;
+            }
+            else if (col.gameObject.CompareTag(anxietyTag))
+            {
+                touchingAnxiety = false;
+            }
+            else if ((shadowMask.value & (1 << col.gameObject.layer)) != 0)
+            {
+                touchingShadow = false;
+            }
+            else if ((detectionMask.value & (1 << col.gameObject.layer)) != 0)
+            {
+                touchingAnxiety = false;
+            }
+        }
     }
-}
 
 
     private void UpdateAnxiety()
@@ -438,4 +453,41 @@ private void OnTriggerExit(Collider other)
             Graphics.Blit(src, dest);
         }
     }
+    // --- Métodos de comunicación desde el jugador ---
+    public void NotifyTriggerEnter(Collider other)
+    {
+        if (other.CompareTag(shadowTag))
+        {
+            touchingShadow = true;
+        }
+        else if (other.CompareTag(anxietyTag))
+        {
+            touchingAnxiety = true;
+        }
+    }
+
+    public void NotifyTriggerStay(Collider other)
+    {
+        if (other.CompareTag(shadowTag))
+        {
+            touchingShadow = true;
+        }
+        else if (other.CompareTag(anxietyTag))
+        {
+            touchingAnxiety = true;
+        }
+    }
+
+    public void NotifyTriggerExit(Collider other)
+    {
+        if (other.CompareTag(shadowTag))
+        {
+            touchingShadow = false;
+        }
+        else if (other.CompareTag(anxietyTag))
+        {
+            touchingAnxiety = false;
+        }
+    }
+
 }
