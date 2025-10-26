@@ -28,7 +28,6 @@ public class AnxietySystem : MonoBehaviour
     [SerializeField] private float pillDecayRate = 0.05f;
     private float currentPillLevel = 0f;
     private bool isFlashingPill = false; // evita conflictos con ansiedad
-    private float pillTimer = 0f;
 
     [Header("Efectos visuales (URP Volume)")]
     [SerializeField] private Volume volume;

@@ -3524,7 +3524,7 @@ Light:
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
   m_BounceIntensity: 1
-  m_ColorTemperature: 9639
+  m_ColorTemperature: 3636
   m_UseColorTemperature: 1
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
@@ -3539,13 +3539,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 402398922}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
+  m_LocalRotation: {x: 0.74622065, y: 0.21674481, z: 0.3086389, w: 0.5485605}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+  m_LocalEulerAnglesHint: {x: 43.228, y: -253.442, z: -245.323}
 --- !u!114 &402398925
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -54328,6 +54328,18 @@ Transform:
   - {fileID: 7896686441926611526}
   m_Father: {fileID: 6643302292546236575}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &921832010304382976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3296463805275152684}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a70d5e686db20b649a4bd03104ee31df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &922128159474814628
 GameObject:
   m_ObjectHideFlags: 0
@@ -54435,7 +54447,7 @@ MonoBehaviour:
   pillReduction: 30
   maxPillsBeforeOverdose: 3
   pillDecayRate: 0.05
-  volume: {fileID: 0}
+  volume: {fileID: 7660604652718976162}
   heartbeatAudio: {fileID: 1732986502626833785}
   breathingAudio: {fileID: 4322939068484860882}
   anxietyBar: {fileID: 3550616321365247565}
@@ -55061,6 +55073,24 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3296463805275152684
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4359310868482230730}
+  - component: {fileID: 7660604652718976162}
+  - component: {fileID: 921832010304382976}
+  m_Layer: 0
+  m_Name: Global Volume
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!4 &3335234175588028671
 Transform:
   m_ObjectHideFlags: 0
@@ -55455,6 +55485,21 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!4 &4359310868482230730
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3296463805275152684}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -4.8147717, y: -0.9052361, z: 3.4141068}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &4508099687521392604
 Transform:
   m_ObjectHideFlags: 0
@@ -56520,26 +56565,6 @@ AudioListener:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7735563003484387762}
   m_Enabled: 1
---- !u!114 &7162784016746444352
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7735563003484387762}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fd1fb2b7b767ae944bac5af64d17aeba, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  target: {fileID: 5363052520387398224}
-  offset: {x: 0, y: 3.5, z: -1}
-  smoothPosition: 15
-  smoothRotation: 15
-  tiltAngle: 16.6
-  stability: 0.95
-  runRotationDamping: 0.5
-  maxTiltAtRun: 5
 --- !u!4 &7168524237951211417
 Transform:
   m_ObjectHideFlags: 0
@@ -56729,6 +56754,23 @@ MonoBehaviour:
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
   m_PresetInfoIsWorld: 0
+--- !u!114 &7660604652718976162
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3296463805275152684}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_IsGlobal: 1
+  priority: 0
+  blendDistance: 0
+  weight: 1
+  sharedProfile: {fileID: 11400000, guid: 1bbbfbf7b0f97e04fb450e18e8d5e766, type: 2}
 --- !u!114 &7666235457017337762
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -56790,9 +56832,9 @@ GameObject:
   - component: {fileID: 3335234175588028671}
   - component: {fileID: 7976898972056659712}
   - component: {fileID: 7145192881251741748}
-  - component: {fileID: 7162784016746444352}
   - component: {fileID: 6810824168554475613}
   - component: {fileID: 2445033405431115377}
+  - component: {fileID: 7976898972056659713}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: Untagged
@@ -57062,6 +57104,25 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!114 &7976898972056659713
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7735563003484387762}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd1fb2b7b767ae944bac5af64d17aeba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 5363052520387398224}
+  offset: {x: 0, y: 3.6, z: -1.5}
+  smoothPosition: 8
+  smoothRotation: 6
+  tiltAngle: 20
+  stability: 0.95
+  movimientoMinimo: 0.7
 --- !u!1 &8012379163640907682
 GameObject:
   m_ObjectHideFlags: 0
@@ -57504,6 +57565,7 @@ SceneRoots:
   - {fileID: 3258772422910745714}
   - {fileID: 3335234175588028671}
   - {fileID: 5363052520387398224}
+  - {fileID: 4359310868482230730}
   - {fileID: 685367321}
   - {fileID: 1233882905}
   - {fileID: 912303759}
