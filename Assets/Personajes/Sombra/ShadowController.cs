@@ -10,6 +10,8 @@ public class ShadowController : MonoBehaviour
     public Transform player;
     private NavMeshAgent agent;
     private Animator animator;
+    private SkinnedMeshRenderer[] renderers;
+    private Collider shadowCollider;
 
     [Header("Audio Sources")]
     public AudioSource idleSource;
@@ -23,27 +25,26 @@ public class ShadowController : MonoBehaviour
     public AudioClip runClip;
     public AudioClip cryClip;
 
-    [Header("Comportamiento aleatorio")]
-    public float minActionTime = 3f;
-    public float maxActionTime = 7f;
+    [Header("Parámetros de comportamiento")]
     public float detectionRadius = 10f;
+    public float appearRadius = 15f;
     public float appearDistanceMin = 6f;
     public float appearDistanceMax = 12f;
 
-    [Header("Desaparición y aparición")]
+    [Header("Tiempos de desaparición y aparición")]
     public float fadeDuration = 2f;
-    public float reappearDelayMin = 10f;
-    public float reappearDelayMax = 30f;
-    private SkinnedMeshRenderer[] renderers;
+    public float reappearDelayMin = 20f;
+    public float reappearDelayMax = 40f;
     private bool isFading = false;
 
-    [Header("Intervalo entre comportamientos")]
+    [Header("Intervalos de ataque")]
     public float minCooldown = 15f;
     public float maxCooldown = 60f;
 
     private bool firstSeen = false;
     private bool canAct = false;
     private float nextActionDelay = 0f;
+    private bool recentlyTouched = false;
 
     private enum ShadowState { Idle, Walking, Running, Crying }
     private ShadowState currentState;
@@ -53,19 +54,21 @@ public class ShadowController : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
         renderers = GetComponentsInChildren<SkinnedMeshRenderer>();
+        shadowCollider = GetComponent<Collider>();
 
         if (player == null)
             player = GameObject.FindGameObjectWithTag("Player").transform;
 
-        canAct = false;
+        canAct = true;
         StartCoroutine(RandomBehaviorLoop());
+
+        Debug.Log(" La sombra está en escena, esperando ser vista por primera vez...");
     }
 
     private void Update()
     {
         if (player == null || isFading) return;
 
-        // Siempre mira hacia el jugador
         Vector3 dir = player.position - transform.position;
         dir.y = 0;
         if (dir.sqrMagnitude > 0.001f)
@@ -74,68 +77,73 @@ public class ShadowController : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * 2f);
         }
 
-        // Detectar si el jugador realmente puede ver a la sombra
+        // Detección del primer avistamiento
         if (!firstSeen)
         {
-            Vector3 eyePos = player.position + Vector3.up * 1.6f; // altura de los ojos
+            Vector3 eyePos = player.position + Vector3.up * 1.6f;
             Vector3 dirToShadow = (transform.position - eyePos).normalized;
             float distance = Vector3.Distance(eyePos, transform.position);
             float angle = Vector3.Angle(player.forward, dirToShadow);
 
-            // Solo dentro del campo visual y a distancia razonable
             if (angle < 45f && distance < 20f)
             {
-                // Raycast: confirma que no haya obstáculos y que golpee a la sombra
                 if (Physics.Raycast(eyePos, dirToShadow, out RaycastHit hit, distance))
                 {
                     if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Sombra"))
                     {
                         firstSeen = true;
-                        canAct = true;
-                        Debug.Log("La sombra ha sido vista por primera vez — corre hacia el jugador");
-                        StartCoroutine(FirstChaseThenDisappear());
+                        Debug.Log("La sombra ha sido vista por primera vez — Comienza la persecución (RUN).");
+                        StartCoroutine(HandleFirstSeenSequence());
                     }
                 }
             }
         }
     }
 
-
-
-
-    private void OnBecameVisible()
+    private IEnumerator HandleFirstSeenSequence()
     {
-        if (!firstSeen)
-        {
-            firstSeen = true;
-            canAct = true;
-            Debug.Log("La sombra ha sido vista por primera vez");
-            TriggerState(ShadowState.Walking);
-            StartCoroutine(DisappearAfterSeen());
-        }
+        canAct = false;
+        yield return StartCoroutine(FirstChaseThenDisappear());
+        canAct = true;
     }
 
-    private IEnumerator DisappearAfterSeen()
-    {
-        yield return new WaitForSeconds(0.8f);
-        if (!isFading)
-            StartCoroutine(FadeOutAndReappear());
-    }
     private IEnumerator FirstChaseThenDisappear()
     {
-        // Primera reacción: correr hacia el jugador
         TriggerState(ShadowState.Running);
         agent.isStopped = false;
         agent.speed = 5f;
         agent.SetDestination(player.position);
 
-        yield return new WaitForSeconds(1.2f); // corre brevemente hacia él
+        recentlyTouched = false;
+        StartCoroutine(AutoDisappearIfNotTouched(10f));
 
-        // Luego desaparece
+        float timer = 0f;
+        while (timer < 1.5f)
+        {
+            timer += Time.deltaTime;
+            if (Vector3.Distance(transform.position, player.position) < 2f)
+            {
+                recentlyTouched = true;
+                if (!isFading)
+                    StartCoroutine(FadeOutAndReappear());
+                yield break;
+            }
+            yield return null;
+        }
+
         if (!isFading)
             StartCoroutine(FadeOutAndReappear());
     }
 
+    private IEnumerator AutoDisappearIfNotTouched(float waitTime)
+    {
+        yield return new WaitForSeconds(waitTime);
+        if (!recentlyTouched && !isFading)
+        {
+            Debug.Log(" La sombra no alcanzó al jugador, desaparece automáticamente...");
+            StartCoroutine(FadeOutAndReappear());
+        }
+    }
 
     private IEnumerator RandomBehaviorLoop()
     {
@@ -152,33 +160,50 @@ public class ShadowController : MonoBehaviour
                 int action = Random.Range(0, 4);
                 switch (action)
                 {
-                    case 0: TriggerState(ShadowState.Idle); break;
+                    case 0: yield return StartCoroutine(StateWithAutoFade(ShadowState.Idle)); break;
                     case 1: yield return StartCoroutine(WalkAroundPlayer()); break;
                     case 2: yield return StartCoroutine(RunTowardsPlayer()); break;
-                    case 3: TriggerState(ShadowState.Crying); break;
+                    case 3: yield return StartCoroutine(StateWithAutoFade(ShadowState.Crying)); break;
                 }
 
                 nextActionDelay = Random.Range(minCooldown, maxCooldown);
+                Debug.Log($" Próximo ataque estimado en {nextActionDelay:F1} segundos...");
             }
-
             yield return null;
+        }
+    }
+
+    // Estados estáticos (Idle o Cry) que desaparecen tras 10 segundos
+    private IEnumerator StateWithAutoFade(ShadowState state)
+    {
+        TriggerState(state);
+        yield return new WaitForSeconds(10f);
+
+        if (!isFading)
+        {
+            Debug.Log($" La sombra estuvo en {state} durante 10s — desaparece para reaparecer cerca...");
+            yield return StartCoroutine(FadeOutAndReappear());
         }
     }
 
     private void TriggerState(ShadowState state)
     {
         currentState = state;
-        ResetTriggers();
+        animator.ResetTrigger("Idle");
+        animator.ResetTrigger("Walking");
+        animator.ResetTrigger("Running");
+        animator.ResetTrigger("Crying");
+        StopAllAudio();
 
         switch (state)
         {
             case ShadowState.Idle:
                 animator.SetTrigger("Idle");
-                PlaySound(idleSource, idleClip, 0.7f);
+                if (firstSeen) PlaySound(idleSource, idleClip, 0.7f);
                 break;
             case ShadowState.Walking:
                 animator.SetTrigger("Walking");
-                PlaySound(walkSource, walkClip, 0.8f);
+                if (firstSeen) PlaySound(walkSource, walkClip, 0.8f);
                 break;
             case ShadowState.Running:
                 animator.SetTrigger("Running");
@@ -186,18 +211,9 @@ public class ShadowController : MonoBehaviour
                 break;
             case ShadowState.Crying:
                 animator.SetTrigger("Crying");
-                PlaySound(crySource, cryClip, 0.9f);
+                if (firstSeen) PlaySound(crySource, cryClip, 0.9f);
                 break;
         }
-    }
-
-    private void ResetTriggers()
-    {
-        animator.ResetTrigger("Idle");
-        animator.ResetTrigger("Walking");
-        animator.ResetTrigger("Running");
-        animator.ResetTrigger("Crying");
-        StopAllAudio();
     }
 
     private void StopAllAudio()
@@ -238,24 +254,8 @@ public class ShadowController : MonoBehaviour
         agent.SetDestination(player.position);
 
         yield return new WaitForSeconds(Random.Range(2f, 4f));
-
         agent.isStopped = true;
         TriggerState(ShadowState.Idle);
-    }
-
-    public void AppearNearPlayer()
-    {
-        if (player == null) return;
-
-        Vector3 randomDir = player.forward * Random.Range(appearDistanceMin, appearDistanceMax);
-        randomDir += new Vector3(Random.Range(-3f, 3f), 0, Random.Range(-3f, 3f));
-        Vector3 spawnPos = player.position + randomDir;
-
-        if (NavMesh.SamplePosition(spawnPos, out NavMeshHit hit, appearDistanceMax, NavMesh.AllAreas))
-        {
-            transform.position = hit.position;
-            StartCoroutine(FadeIn());
-        }
     }
 
     public IEnumerator FadeOutAndReappear()
@@ -263,22 +263,42 @@ public class ShadowController : MonoBehaviour
         if (isFading) yield break;
         isFading = true;
 
+        if (shadowCollider) shadowCollider.enabled = false;
+
         yield return StartCoroutine(Fade(1f, 0f));
         agent.isStopped = true;
-        gameObject.SetActive(false);
+        SetRenderersVisible(false);
 
-        yield return new WaitForSeconds(Random.Range(reappearDelayMin, reappearDelayMax));
+        float delay = Random.Range(reappearDelayMin, reappearDelayMax);
+        Debug.Log($" La sombra desapareció. Reaparecerá en aproximadamente {delay:F1} segundos...");
+        yield return new WaitForSeconds(delay);
 
-        gameObject.SetActive(true);
         AppearNearPlayer();
         yield return StartCoroutine(Fade(0f, 1f));
+
+        SetRenderersVisible(true);
+        if (shadowCollider) shadowCollider.enabled = true;
         isFading = false;
-        Debug.Log("La sombra reaparece y comienza persecución");
+
+        Debug.Log(" La sombra reapareció cerca del jugador y comenzó una nueva persecución.");
+        StartCoroutine(RunTowardsPlayer());
     }
 
-    private IEnumerator FadeIn()
+    public void AppearNearPlayer()
     {
-        yield return StartCoroutine(Fade(0f, 1f));
+        if (player == null) return;
+
+        Vector3 randomDir = Random.insideUnitSphere * appearRadius;
+        randomDir += player.position;
+
+        if (NavMesh.SamplePosition(randomDir, out NavMeshHit hit, appearRadius, NavMesh.AllAreas))
+            transform.position = hit.position;
+    }
+
+    private void SetRenderersVisible(bool visible)
+    {
+        foreach (var rend in renderers)
+            rend.enabled = visible;
     }
 
     private IEnumerator Fade(float startAlpha, float endAlpha)
