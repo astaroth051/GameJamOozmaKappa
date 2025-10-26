@@ -92,7 +92,7 @@ public class ShadowController : MonoBehaviour
                     if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Sombra"))
                     {
                         firstSeen = true;
-                        Debug.Log("La sombra ha sido vista por primera vez — Comienza la persecución (RUN).");
+                        Debug.Log(" La sombra ha sido vista por primera vez — Comienza la persecución (RUN).");
                         StartCoroutine(HandleFirstSeenSequence());
                     }
                 }
@@ -157,31 +157,30 @@ public class ShadowController : MonoBehaviour
                     nextActionDelay = 0f;
                 }
 
-                int action = Random.Range(0, 4);
-                switch (action)
-                {
-                    case 0: yield return StartCoroutine(StateWithAutoFade(ShadowState.Idle)); break;
-                    case 1: yield return StartCoroutine(WalkAroundPlayer()); break;
-                    case 2: yield return StartCoroutine(RunTowardsPlayer()); break;
-                    case 3: yield return StartCoroutine(StateWithAutoFade(ShadowState.Crying)); break;
-                }
+                // Aumentar probabilidad de "Crying" frente a los demás
+                int roll = Random.Range(0, 20);
+                if (roll < 1) yield return StartCoroutine(StateWithAutoFade(ShadowState.Idle));    // 5%
+                else if (roll < 7) yield return StartCoroutine(WalkAroundPlayer());                // 30%
+                else if (roll < 13) yield return StartCoroutine(RunTowardsPlayer());               // 30%
+                else yield return StartCoroutine(StateWithAutoFade(ShadowState.Crying));           // 35%
+
 
                 nextActionDelay = Random.Range(minCooldown, maxCooldown);
                 Debug.Log($" Próximo ataque estimado en {nextActionDelay:F1} segundos...");
             }
-            yield return null;
+            yield return null; 
         }
     }
 
-    // Estados estáticos (Idle o Cry) que desaparecen tras 10 segundos
+    // Estados estáticos (Idle o Cry) que desaparecen tras 6 segundos siempre
     private IEnumerator StateWithAutoFade(ShadowState state)
     {
         TriggerState(state);
-        yield return new WaitForSeconds(10f);
+        yield return new WaitForSeconds(6f);
 
         if (!isFading)
         {
-            Debug.Log($" La sombra estuvo en {state} durante 10s — desaparece para reaparecer cerca...");
+            Debug.Log($" La sombra estuvo en {state} durante 6s — desaparece para reaparecer cerca...");
             yield return StartCoroutine(FadeOutAndReappear());
         }
     }
