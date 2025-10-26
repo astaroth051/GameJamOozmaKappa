@@ -20,6 +20,7 @@ public class AnxietySystem : MonoBehaviour
     [SerializeField] private float anxietyDecreaseRate = 2.5f;
     [SerializeField] private float maxAnxiety = 100f;
     private bool isOverwhelmed = false;
+    private bool touchingAnxiety = false;
 
     [Header("Píldoras")]
     [SerializeField] private float pillDecaySeconds = 15f;
@@ -27,7 +28,7 @@ public class AnxietySystem : MonoBehaviour
     [SerializeField] private int maxPillsBeforeOverdose = 3;
     [SerializeField] private float pillDecayRate = 0.05f;
     private float currentPillLevel = 0f;
-    private bool isFlashingPill = false; // evita conflictos con ansiedad
+    private bool isFlashingPill = false;
 
     [Header("Efectos visuales (URP Volume)")]
     [SerializeField] private Volume volume;
@@ -52,8 +53,8 @@ public class AnxietySystem : MonoBehaviour
     {
         if (eyes == null)
         {
-            Debug.LogWarning("⚠️ No se asignó un punto de vista (EyePoint). Usa un Empty en la cabeza.");
             eyes = transform;
+            Debug.LogWarning("⚠️ No se asignó un punto de vista (EyePoint). Usa un Empty en la cabeza.");
         }
 
         if (volume != null)
@@ -88,6 +89,7 @@ public class AnxietySystem : MonoBehaviour
     private void Update()
     {
         HandleRaycast();
+        HandleTriggerAnxiety();
         UpdateAnxiety();
         UpdateVisuals();
         UpdateAudio();
@@ -95,6 +97,7 @@ public class AnxietySystem : MonoBehaviour
         UpdateUI();
     }
 
+    // --- Aumenta ansiedad si se mira un objeto con el tag ---
     private void HandleRaycast()
     {
         if (eyes == null) return;
@@ -113,10 +116,37 @@ public class AnxietySystem : MonoBehaviour
 
         if (hitAnxiety)
             anxietyLevel += anxietyIncreaseRate * Time.deltaTime;
-        else
+        else if (!touchingAnxiety)
             anxietyLevel -= anxietyDecreaseRate * Time.deltaTime;
 
         anxietyLevel = Mathf.Clamp(anxietyLevel, 0, maxAnxiety);
+    }
+
+    // --- Aumenta ansiedad si se está tocando un objeto con trigger ---
+    private void HandleTriggerAnxiety()
+    {
+        if (touchingAnxiety)
+            anxietyLevel += anxietyIncreaseRate * 1.2f * Time.deltaTime; // un poco más fuerte al contacto
+
+        anxietyLevel = Mathf.Clamp(anxietyLevel, 0, maxAnxiety);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag(anxietyTag))
+            touchingAnxiety = true;
+    }
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (other.CompareTag(anxietyTag))
+            touchingAnxiety = true;
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag(anxietyTag))
+            touchingAnxiety = false;
     }
 
     private void UpdateAnxiety()
@@ -149,7 +179,6 @@ public class AnxietySystem : MonoBehaviour
         if (pillBar != null)
             pillBar.size = currentPillLevel;
 
-        // 🔄 Flash químico (-80 a 0)
         if (colorAdjust != null && !isFlashingPill)
             StartCoroutine(PillVisualFlash());
 
@@ -169,16 +198,13 @@ public class AnxietySystem : MonoBehaviour
         }
     }
 
-    // --- Flash químico: pantalla desaturada (-80) y retorno progresivo ---
     private IEnumerator PillVisualFlash()
     {
         isFlashingPill = true;
-
         float time = 0f;
         float duration = 1.8f;
         float startSat = colorAdjust.saturation.value;
 
-        // baja a -80 rápidamente
         while (time < duration / 2f)
         {
             time += Time.deltaTime;
@@ -187,10 +213,8 @@ public class AnxietySystem : MonoBehaviour
             yield return null;
         }
 
-        // breve pausa en -80
         yield return new WaitForSeconds(0.3f);
 
-        // vuelve suavemente al valor base
         time = 0f;
         while (time < duration)
         {
@@ -203,17 +227,14 @@ public class AnxietySystem : MonoBehaviour
         isFlashingPill = false;
     }
 
-    // --- Efectos visuales suaves ---
     private void UpdateVisuals()
     {
         float t = anxietyLevel / maxAnxiety;
         float easedT = Mathf.SmoothStep(0f, 1f, t);
 
-        // Viñeta siempre presente (oscurece más con ansiedad)
         if (vignette != null)
             vignette.intensity.value = Mathf.Lerp(0f, 0.8f, easedT);
 
-        // 🔹 Desaturación: solo a partir del 80 % de ansiedad
         if (colorAdjust != null && !isFlashingPill)
         {
             if (anxietyLevel >= 80f)
@@ -223,12 +244,10 @@ public class AnxietySystem : MonoBehaviour
             }
             else
             {
-                // vuelve progresivamente a 0 cuando baja del 80 %
                 colorAdjust.saturation.value = Mathf.Lerp(colorAdjust.saturation.value, 0f, Time.deltaTime * 3f);
             }
         }
 
-        // Film Grain: desde 30% en adelante
         if (filmGrain != null)
         {
             if (anxietyLevel > 30f)
@@ -244,7 +263,6 @@ public class AnxietySystem : MonoBehaviour
             }
         }
     }
-
 
     private void UpdateAudio()
     {
