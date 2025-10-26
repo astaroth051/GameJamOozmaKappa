@@ -254,6 +254,9 @@ public class AnxietySystem : MonoBehaviour
     public void TakePill()
     {
         StartCoroutine(DelayedPillEffect());
+        var sombra = FindObjectOfType<ShadowController>();
+        if (sombra != null)
+            sombra.StartCoroutine(sombra.FadeOutAndReappear());
     }
 
     private IEnumerator DelayedPillEffect()
