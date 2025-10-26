@@ -21,6 +21,7 @@ public class AnxietySystem : MonoBehaviour
     [SerializeField] private float maxAnxiety = 100f;
     private bool isOverwhelmed = false;
     private bool touchingAnxiety = false;
+    private bool bloquearAnsiedad = false;
 
     [Header("Píldoras")]
     [SerializeField] private float pillDecaySeconds = 15f;
@@ -48,6 +49,11 @@ public class AnxietySystem : MonoBehaviour
     [Header("Distorsión temporal")]
     [SerializeField] private float slowMotionScale = 0.6f;
     [SerializeField] private float slowMotionDuration = 2f;
+
+    // --- Fade negro ---
+    private bool isFading = false;
+    private Material fadeMaterial;
+    private float fadeAlpha = 0f;
 
     private void Start()
     {
@@ -83,6 +89,10 @@ public class AnxietySystem : MonoBehaviour
 
         if (pillBar != null) pillBar.size = 0f;
 
+        // Crear material para fade negro
+        fadeMaterial = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+        fadeMaterial.color = new Color(0, 0, 0, 0);
+
         Debug.Log("✅ AnxietySystem inicializado correctamente.");
     }
 
@@ -97,20 +107,21 @@ public class AnxietySystem : MonoBehaviour
         UpdateUI();
     }
 
-    // --- Aumenta ansiedad si se mira un objeto con el tag ---
+    // --- Aumenta ansiedad si se mira un objeto con tag o layer ---
     private void HandleRaycast()
     {
-        if (eyes == null) return;
+        if (eyes == null || bloquearAnsiedad) return;
 
         Ray ray = new Ray(eyes.position, eyes.forward);
         bool hitAnxiety = false;
 
-        if (Physics.Raycast(ray, out RaycastHit hit, viewDistance, detectionMask))
+        if (Physics.Raycast(ray, out RaycastHit hit, viewDistance))
         {
             Vector3 dirToTarget = (hit.point - eyes.position).normalized;
             float angle = Vector3.Angle(eyes.forward, dirToTarget);
+            bool esAnsiedad = hit.collider.CompareTag(anxietyTag) || ((detectionMask.value & (1 << hit.collider.gameObject.layer)) != 0);
 
-            if (angle < viewAngle && hit.collider.CompareTag(anxietyTag))
+            if (angle < viewAngle && esAnsiedad)
                 hitAnxiety = true;
         }
 
@@ -125,8 +136,10 @@ public class AnxietySystem : MonoBehaviour
     // --- Aumenta ansiedad si se está tocando un objeto con trigger ---
     private void HandleTriggerAnxiety()
     {
+        if (bloquearAnsiedad) return;
+
         if (touchingAnxiety)
-            anxietyLevel += anxietyIncreaseRate * 1.2f * Time.deltaTime; // un poco más fuerte al contacto
+            anxietyLevel += anxietyIncreaseRate * 1.2f * Time.deltaTime;
 
         anxietyLevel = Mathf.Clamp(anxietyLevel, 0, maxAnxiety);
     }
@@ -135,17 +148,23 @@ public class AnxietySystem : MonoBehaviour
     {
         if (other.CompareTag(anxietyTag))
             touchingAnxiety = true;
+        else if ((detectionMask.value & (1 << other.gameObject.layer)) != 0)
+            touchingAnxiety = true;
     }
 
     private void OnTriggerStay(Collider other)
     {
         if (other.CompareTag(anxietyTag))
             touchingAnxiety = true;
+        else if ((detectionMask.value & (1 << other.gameObject.layer)) != 0)
+            touchingAnxiety = true;
     }
 
     private void OnTriggerExit(Collider other)
     {
         if (other.CompareTag(anxietyTag))
+            touchingAnxiety = false;
+        else if ((detectionMask.value & (1 << other.gameObject.layer)) != 0)
             touchingAnxiety = false;
     }
 
@@ -168,6 +187,13 @@ public class AnxietySystem : MonoBehaviour
 
     private IEnumerator DelayedPillEffect()
     {
+        bloquearAnsiedad = true;
+        float originalDecrease = anxietyDecreaseRate;
+        float originalDecay = pillDecayRate;
+
+        anxietyDecreaseRate *= 0.25f;
+        pillDecayRate *= 0.25f;
+
         yield return new WaitForSeconds(5f);
 
         anxietyLevel -= pillReduction;
@@ -184,6 +210,12 @@ public class AnxietySystem : MonoBehaviour
 
         if (currentPillLevel >= 1f)
             StartCoroutine(OverdoseEffect());
+
+        yield return new WaitForSeconds(pillDecaySeconds * 0.5f);
+
+        anxietyDecreaseRate = originalDecrease;
+        pillDecayRate = originalDecay;
+        bloquearAnsiedad = false;
     }
 
     private void UpdatePillDecay()
@@ -352,8 +384,40 @@ public class AnxietySystem : MonoBehaviour
 
     private IEnumerator RestartScene()
     {
-        yield return new WaitForSeconds(1f);
+        yield return StartCoroutine(FadeToBlack(2f));
+        yield return new WaitForSeconds(0.5f);
+
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    private IEnumerator FadeToBlack(float duration)
+    {
+        if (isFading || fadeMaterial == null) yield break;
+        isFading = true;
+
+        float time = 0f;
+        while (time < duration)
+        {
+            time += Time.deltaTime;
+            fadeAlpha = Mathf.Lerp(0f, 1f, time / duration);
+            yield return null;
+        }
+
+        fadeAlpha = 1f;
+        isFading = false;
+    }
+
+    private void OnRenderImage(RenderTexture src, RenderTexture dest)
+    {
+        if (fadeMaterial != null)
+        {
+            fadeMaterial.color = new Color(0, 0, 0, fadeAlpha);
+            Graphics.Blit(src, dest, fadeMaterial);
+        }
+        else
+        {
+            Graphics.Blit(src, dest);
+        }
     }
 }
