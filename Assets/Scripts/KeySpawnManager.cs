@@ -17,19 +17,12 @@ public class KeySpawnManager : MonoBehaviour
     [Header("Tiempo antes de aparecer tras ser vista")]
     public float delayAparicion = 5f;
 
-    [Header("Audio al recoger la llave")]
-    public AudioClip sonidoRecogerLlave;
-
-    [Header("Audio cuando el jugador ve a la sombra (momento poético)")]
-    public AudioClip sonidoMomentoSombra;
-
     [Header("Texto TMP en pantalla")]
     public TextMeshProUGUI textoUI; // Asigna el TextMeshProUGUI del Canvas por el inspector
 
     private GameObject llaveInstanciada;
     private bool llaveSpawned = false;
     private bool momentoSombraMostrado = false;
-    private AudioSource audioSource;
 
     private void Start()
     {
@@ -45,11 +38,7 @@ public class KeySpawnManager : MonoBehaviour
         if (puntosSpawn.Count == 0)
             Debug.LogWarning("[KeySpawnManager] No hay puntos de spawn asignados.");
 
-        // Crear fuente de audio local
-        audioSource = gameObject.AddComponent<AudioSource>();
-        audioSource.spatialBlend = 0f;
-        audioSource.playOnAwake = false;
-
+        // Inicializar texto
         if (textoUI != null)
         {
             textoUI.text = "";
@@ -77,28 +66,16 @@ public class KeySpawnManager : MonoBehaviour
     }
 
     // -------------------------------------------------------
-    // MOMENTO POÉTICO
+    // MOMENTO POÉTICO (solo texto visual)
     // -------------------------------------------------------
     private IEnumerator MostrarMomentoSombra()
     {
         Debug.Log("[KeySpawnManager] 🕯️ Momento poético: la sombra fue vista.");
 
-        // Atenuar todo el audio del juego
-        AudioListener.volume = 0.05f;
-
-        // Texto poético
         if (textoUI != null)
         {
             textoUI.text = "La sombra dejó de ocultarse... la viste a los ojos, y la llave ahora es real.";
             textoUI.alpha = 0f;
-        }
-
-        // Reproducir audio especial
-        if (sonidoMomentoSombra != null)
-        {
-            audioSource.clip = sonidoMomentoSombra;
-            audioSource.volume = 1f;
-            audioSource.Play();
         }
 
         // ---- FADE IN ----
@@ -112,9 +89,8 @@ public class KeySpawnManager : MonoBehaviour
             yield return null;
         }
 
-        // Mantener texto visible durante el audio o un mínimo
-        float duracionVisible = Mathf.Max(sonidoMomentoSombra != null ? sonidoMomentoSombra.length : 5f, 5f);
-        yield return new WaitForSeconds(duracionVisible - fadeInDur);
+        // Mantener texto visible unos segundos
+        yield return new WaitForSeconds(4f);
 
         // ---- FADE OUT ----
         float fadeOutDur = 2f;
@@ -129,9 +105,6 @@ public class KeySpawnManager : MonoBehaviour
 
         if (textoUI != null)
             textoUI.text = "";
-
-        // Restaurar volumen
-        AudioListener.volume = 1f;
 
         Debug.Log("[KeySpawnManager] Fin del momento poético. Continuando con la llave...");
     }
@@ -163,7 +136,7 @@ public class KeySpawnManager : MonoBehaviour
     }
 
     // -------------------------------------------------------
-    // RECOGER LA LLAVE
+    // RECOGER LA LLAVE (sin sonido)
     // -------------------------------------------------------
     private void OnTriggerStay(Collider other)
     {
@@ -174,20 +147,11 @@ public class KeySpawnManager : MonoBehaviour
             {
                 Debug.Log("[KeySpawnManager] Jugador recogió la llave.");
 
-                // Sonido de recogida
-                if (sonidoRecogerLlave != null)
-                {
-                    audioSource.clip = sonidoRecogerLlave;
-                    audioSource.Play();
-                    Debug.Log("[KeySpawnManager] Sonido de llave reproducido.");
-                }
-
                 // Ocultar visualmente la llave
                 foreach (var rend in llaveInstanciada.GetComponentsInChildren<Renderer>())
                     rend.enabled = false;
 
-                float delay = (sonidoRecogerLlave != null) ? sonidoRecogerLlave.length : 0f;
-                Destroy(llaveInstanciada, delay);
+                Destroy(llaveInstanciada);
                 llaveInstanciada = null;
             }
         }
