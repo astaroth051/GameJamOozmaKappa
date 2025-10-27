@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Ansiedad
   - Sombra
+  - Pasos
+  - FinalPiso1
   layers:
   - Default
   - TransparentFX

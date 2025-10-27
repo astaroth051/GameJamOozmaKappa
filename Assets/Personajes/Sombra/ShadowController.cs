@@ -168,9 +168,10 @@ public class ShadowController : MonoBehaviour
                 nextActionDelay = Random.Range(minCooldown, maxCooldown);
                 Debug.Log($" Próximo ataque estimado en {nextActionDelay:F1} segundos...");
             }
-            yield return null; 
+            yield return null;
         }
     }
+
 
     // Estados estáticos (Idle o Cry) que desaparecen tras 6 segundos siempre
     private IEnumerator StateWithAutoFade(ShadowState state)
@@ -334,4 +335,9 @@ public class ShadowController : MonoBehaviour
         source.loop = true;
         source.Play();
     }
+    public bool GetFirstSeen()
+    {
+        return firstSeen;
+    }
+
 }
