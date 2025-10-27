@@ -32144,7 +32144,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1138787950}
-  - component: {fileID: 1138787949}
+  - component: {fileID: 1138787951}
   m_Layer: 0
   m_Name: KeyManager
   m_TagString: Untagged
@@ -32152,7 +32152,22 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1138787949
+--- !u!4 &1138787950
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1138787948}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 29.579172, y: 3.5659294, z: -24.834791}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1138787951
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -32183,23 +32198,10 @@ MonoBehaviour:
   - {fileID: 1980907981}
   - {fileID: 1540183817}
   sombra: {fileID: 711950789}
-  delayAparicion: 1
+  delayAparicion: 5
   sonidoRecogerLlave: {fileID: 8300000, guid: 97ae1f9ef88b09744aa9f6c997d2535d, type: 3}
---- !u!4 &1138787950
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1138787948}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 29.579172, y: 3.5659294, z: -24.834791}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  sonidoMomentoSombra: {fileID: 8300000, guid: 878368e5c33f593438cfd9ff8e94e896, type: 3}
+  textoUI: {fileID: 717567763}
 --- !u!4 &1146705731 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1546290318320242931, guid: 90fe98c92a6f1d54d8420a4ff5fde726, type: 3}
