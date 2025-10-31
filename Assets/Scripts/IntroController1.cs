@@ -14,7 +14,8 @@ public class IntroController1 : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space) || Input.GetButtonDown("Start"))
+        // Detecta espacio o Enter (Return)
+        if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return))
         {
             SkipIntro();
         }

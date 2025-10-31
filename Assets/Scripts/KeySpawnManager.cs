@@ -150,7 +150,7 @@ public class KeySpawnManager : MonoBehaviour
                 // Ocultar visualmente la llave
                 foreach (var rend in llaveInstanciada.GetComponentsInChildren<Renderer>())
                     rend.enabled = false;
-
+                KeyItem.llaveRecogida = true;
                 Destroy(llaveInstanciada);
                 llaveInstanciada = null;
             }
