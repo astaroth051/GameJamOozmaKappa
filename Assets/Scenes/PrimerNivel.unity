@@ -14,7 +14,7 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 9
-  m_Fog: 0
+  m_Fog: 1
   m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_FogMode: 3
   m_FogDensity: 0.01
@@ -96,7 +96,7 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 0}
+  m_LightingDataAsset: {fileID: 112000000, guid: 29f7f3896062e034582bdc42a3917620, type: 2}
   m_LightingSettings: {fileID: 4890085278179872738, guid: e972845ea6b40a341a1df1e1db19ecdf, type: 2}
 --- !u!196 &4
 NavMeshSettings:
@@ -6371,6 +6371,7 @@ GameObject:
   - component: {fileID: 402398924}
   - component: {fileID: 402398923}
   - component: {fileID: 402398925}
+  - component: {fileID: 402398926}
   m_Layer: 0
   m_Name: Directional Light
   m_TagString: Untagged
@@ -6478,6 +6479,18 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
+--- !u!114 &402398926
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 402398922}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afae25f37808e0e4aa6d76ee9296e240, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &412375529 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1546290318320242931, guid: 90fe98c92a6f1d54d8420a4ff5fde726, type: 3}
