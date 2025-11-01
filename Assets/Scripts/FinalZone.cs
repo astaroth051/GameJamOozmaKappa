@@ -1,8 +1,11 @@
 using UnityEngine;
+using UnityEngine.SceneManagement; // Necesario para cambiar de escena
 
 [RequireComponent(typeof(Collider))]
 public class FinalZone : MonoBehaviour
 {
+    [SerializeField] private string nextSceneName = "IntroNivel2"; // nombre de la siguiente escena
+
     private void Start()
     {
         Collider col = GetComponent<Collider>();
@@ -16,13 +19,8 @@ public class FinalZone : MonoBehaviour
             // Verificar si la llave fue recogida
             if (KeyItem.llaveRecogida)
             {
-                Debug.Log("[FinalZone] El jugador tiene la llave. Cerrando aplicación...");
-
-#if UNITY_EDITOR
-                UnityEditor.EditorApplication.isPlaying = false;
-#else
-                Application.Quit();
-#endif
+                Debug.Log("[FinalZone] El jugador tiene la llave. Cargando escena: " + nextSceneName);
+                SceneManager.LoadScene(nextSceneName);
             }
             else
             {
