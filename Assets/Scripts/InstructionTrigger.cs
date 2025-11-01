@@ -7,16 +7,15 @@ using TMPro;
 public class InstructionStep
 {
     [TextArea(2, 4)]
-    public string texto;               // Texto a mostrar
-    public List<AudioClip> audios;     // Lista de audios (ahora puede haber varios)
+    public string texto;
+    public List<AudioClip> audios;
 }
 
 public class InstructionTrigger : MonoBehaviour
 {
     [Header("Configuración general")]
-    public List<InstructionStep> pasos;     // Lista de instrucciones
-    public float duracionPorPaso = 4f;      // Duración del texto (además del audio)
-    public bool repetir = false;
+    public List<InstructionStep> pasos;
+    public float duracionPorPaso = 4f;
 
     [Header("Referencias UI y Audio")]
     public TextMeshProUGUI textoUI;
@@ -26,80 +25,79 @@ public class InstructionTrigger : MonoBehaviour
     private bool yaActivado = false;
     private Coroutine rutina;
 
+    // 🔒 Solo un trigger activo a la vez
+    private static bool algunTriggerActivo = false;
+
     private void Start()
     {
-       
-
         if (fuenteAudio == null)
         {
             fuenteAudio = gameObject.AddComponent<AudioSource>();
-            fuenteAudio.spatialBlend = 0f; // 2D por defecto
-           
+            fuenteAudio.spatialBlend = 0f; // 2D (no afectado por distancia)
+            fuenteAudio.volume = 1f;
+            fuenteAudio.priority = 0;      // máxima prioridad
         }
 
         if (textoUI != null)
-        {
             textoUI.text = "";
-          
-        }
-        else
-        {
-            
-        }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-       
+        // Solo el jugador y solo si no se activó antes
+        if (!other.CompareTag("Player") || !gameObject.CompareTag("Pasos") || yaActivado)
+            return;
 
-        if (other.CompareTag("Player") && gameObject.CompareTag("Pasos") && !yaActivado)
+        // Si otro trigger está activo, espera su turno
+        if (algunTriggerActivo)
         {
-            
-
-            yaActivado = true;
-
-            if (ejecutando && rutina != null)
-            {
-                StopCoroutine(rutina);
-               
-            }
-
-            rutina = StartCoroutine(MostrarInstrucciones());
+            StartCoroutine(EsperarYReproducir());
+            return;
         }
-        else
-        {
-            if (!gameObject.CompareTag("Pasos"))
-            if (!other.CompareTag("Player"))
-            if (yaActivado)
-                Debug.Log("[InstructionTrigger] Ya se activó antes, no volverá a ejecutarse.");
-        }
+
+        yaActivado = true;
+        rutina = StartCoroutine(MostrarInstrucciones());
     }
 
-    IEnumerator MostrarInstrucciones()
+    private IEnumerator EsperarYReproducir()
+    {
+        yield return new WaitWhile(() => algunTriggerActivo);
+
+        // Si ya se activó mientras esperaba, no se repite
+        if (yaActivado) yield break;
+
+        yaActivado = true;
+        rutina = StartCoroutine(MostrarInstrucciones());
+    }
+
+    private IEnumerator MostrarInstrucciones()
     {
         ejecutando = true;
-      
+        algunTriggerActivo = true;
 
         foreach (var paso in pasos)
         {
             if (textoUI != null)
                 textoUI.text = paso.texto;
 
-      
-
-            // Reproducir múltiples audios en orden
+            // Reproduce los audios en orden
             if (paso.audios != null && paso.audios.Count > 0)
             {
-               
                 foreach (var clip in paso.audios)
                 {
                     if (clip == null) continue;
 
-                    fuenteAudio.clip = clip;
-                    fuenteAudio.Play();
-                   
+                    // Usa un AudioSource temporal para no interrumpir otros sonidos
+                    GameObject tempAudio = new GameObject("TempInstructionAudio");
+                    AudioSource temp = tempAudio.AddComponent<AudioSource>();
+                    temp.clip = clip;
+                    temp.spatialBlend = 0f;
+                    temp.volume = 1f;
+                    temp.priority = 0; // prioridad más alta
+                    temp.Play();
 
-                    yield return new WaitForSeconds(clip.length + 0.1f); // pequeña pausa entre clips
+                    Destroy(tempAudio, clip.length + 0.2f);
+                    yield return new WaitForSeconds(clip.length + 0.1f);
                 }
             }
 
@@ -110,12 +108,9 @@ public class InstructionTrigger : MonoBehaviour
             textoUI.text = "";
 
         ejecutando = false;
- 
+        algunTriggerActivo = false;
 
-        if (repetir)
-        {
-            yaActivado = false;
-            StartCoroutine(MostrarInstrucciones());
-        }
+        //  Evita que se vuelva a reproducir nunca más
+        yaActivado = true;
     }
 }

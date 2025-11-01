@@ -1,9 +1,19 @@
 fileFormatVersion: 2
-guid: 2665b08151ee4c94492a3a63c530e71a
+guid: 8618d77127b8b184ea8aca4a84300bb3
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: tripo_mat_4319619e
+    second: {fileID: 2100000, guid: d42ebc52254ba8e42b2217e3f230712e, type: 2}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: tripo_image_4319619e_0
+    second: {fileID: 2800000, guid: b18fa9b708dde2547be7d9e86ae22178, type: 3}
   materials:
     materialImportMode: 2
     materialName: 0

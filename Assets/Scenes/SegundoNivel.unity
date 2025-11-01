@@ -640,6 +640,71 @@ Mesh:
     offset: 0
     size: 0
     path: 
+--- !u!1001 &248242746
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2419614072161797345, guid: 3e25c5d1151fc374eb0f022a140fd892, type: 3}
+      propertyPath: m_Name
+      value: weathered+wooden+door+3d+model (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 3089436914320531035, guid: 3e25c5d1151fc374eb0f022a140fd892, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 6.95
+      objectReference: {fileID: 0}
+    - target: {fileID: 3089436914320531035, guid: 3e25c5d1151fc374eb0f022a140fd892, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 6.49
+      objectReference: {fileID: 0}
+    - target: {fileID: 3089436914320531035, guid: 3e25c5d1151fc374eb0f022a140fd892, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3089436914320531035, guid: 3e25c5d1151fc374eb0f022a140fd892, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3089436914320531035, guid: 3e25c5d1151fc374eb0f022a140fd892, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3089436914320531035, guid: 3e25c5d1151fc374eb0f022a140fd892, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3089436914320531035, guid: 3e25c5d1151fc374eb0f022a140fd892, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3089436914320531035, guid: 3e25c5d1151fc374eb0f022a140fd892, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3089436914320531035, guid: 3e25c5d1151fc374eb0f022a140fd892, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3089436914320531035, guid: 3e25c5d1151fc374eb0f022a140fd892, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 3089436914320531035, guid: 3e25c5d1151fc374eb0f022a140fd892, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 3089436914320531035, guid: 3e25c5d1151fc374eb0f022a140fd892, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 3e25c5d1151fc374eb0f022a140fd892, type: 3}
 --- !u!43 &253396453
 Mesh:
   m_ObjectHideFlags: 0
@@ -2381,7 +2446,7 @@ MonoBehaviour:
   m_Rotation: {x: 0, y: 0, z: 0, w: 1}
   m_PivotLocation: 0
   m_PivotPosition: {x: 0, y: 0, z: 0}
-  m_UnmodifiedMeshVersion: 5151
+  m_UnmodifiedMeshVersion: 5167
   m_ShapeBox:
     m_Center: {x: -1.5, y: 0.25, z: 0}
     m_Extent: {x: 2.5, y: 6.5, z: 0.5}
@@ -2824,7 +2889,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 253396453}
-  m_VersionIndex: 5151
+  m_VersionIndex: 5167
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -3546,7 +3611,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
-  m_Mesh: {fileID: 1458493174}
+  m_Mesh: {fileID: 1092264918}
 --- !u!33 &787662077
 MeshFilter:
   m_ObjectHideFlags: 10
@@ -4120,7 +4185,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
-  m_Mesh: {fileID: 1821626411}
+  m_Mesh: {fileID: 1814225545}
 --- !u!33 &790977875
 MeshFilter:
   m_ObjectHideFlags: 10
@@ -6192,7 +6257,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
-  m_Mesh: {fileID: 726880466}
+  m_Mesh: {fileID: 1295958540}
 --- !u!33 &1590177166
 MeshFilter:
   m_ObjectHideFlags: 10
@@ -6710,7 +6775,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
-  m_Mesh: {fileID: 253396453}
+  m_Mesh: {fileID: 1458493174}
 --- !u!33 &1691011052
 MeshFilter:
   m_ObjectHideFlags: 10
@@ -20348,3 +20413,4 @@ SceneRoots:
   - {fileID: 499650924}
   - {fileID: 1691011056}
   - {fileID: 787662081}
+  - {fileID: 248242746}

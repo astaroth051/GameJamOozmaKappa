@@ -181,11 +181,24 @@ public class EllisTankController : MonoBehaviour
             return;
 
         isPilling = true;
+
+        //  Detener cualquier sonido de movimiento o idle
+        StopMovementLoop();
+        if (idleAudio.isPlaying) idleAudio.Stop();
+
         PlayImmediate("pill");
+
+        // Activar efectos y sonidos de la píldora
         Invoke(nameof(TriggerPillEffect), 0.15f);
         PlayPillClips();
+
+        // Bloquear movimiento durante la animación
+        moveInput = Vector2.zero;
+        isRunning = false;
+
         Invoke(nameof(EndPill), pillDuration);
     }
+
 
     private void TriggerPillEffect()
     {
@@ -306,7 +319,7 @@ public class EllisTankController : MonoBehaviour
         var anxiety = FindObjectOfType<AnxietySystem>();
         if (anxiety != null)
             anxiety.StartCoroutine("FadeToBlack", 2f);
-
+        KeyItem.llaveRecogida = false;
         yield return new WaitForSeconds(1.5f);
 
         UnityEngine.SceneManagement.SceneManager.LoadScene(
