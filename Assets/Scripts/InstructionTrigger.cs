@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using TMPro;
 
 [System.Serializable]
@@ -24,19 +25,23 @@ public class InstructionTrigger : MonoBehaviour
     private bool ejecutando = false;
     private bool yaActivado = false;
     private Coroutine rutina;
-
-    // 🔒 Solo un trigger activo a la vez
     private static bool algunTriggerActivo = false;
+    private bool esSegundoNivel = false;
 
     private void Start()
     {
+        string escenaActual = SceneManager.GetActiveScene().name;
+        esSegundoNivel = escenaActual == "SegundoNivel";
+
         if (fuenteAudio == null)
-        {
             fuenteAudio = gameObject.AddComponent<AudioSource>();
-            fuenteAudio.spatialBlend = 0f; // 2D (no afectado por distancia)
-            fuenteAudio.volume = 1f;
-            fuenteAudio.priority = 0;      // máxima prioridad
-        }
+
+        fuenteAudio.spatialBlend = 0f;
+        fuenteAudio.volume = 1f;
+        fuenteAudio.priority = 0;
+        fuenteAudio.loop = false;
+        fuenteAudio.playOnAwake = false;
+        fuenteAudio.reverbZoneMix = 0f;
 
         if (textoUI != null)
             textoUI.text = "";
@@ -44,13 +49,14 @@ public class InstructionTrigger : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        // Solo el jugador y solo si no se activó antes
         if (!other.CompareTag("Player") || !gameObject.CompareTag("Pasos") || yaActivado)
             return;
 
-        // Si otro trigger está activo, espera su turno
+        Debug.Log($"[InstructionTrigger] Jugador tocó el trigger: {gameObject.name}");
+
         if (algunTriggerActivo)
         {
+            Debug.Log($"[InstructionTrigger] Otro trigger activo, esperando turno: {gameObject.name}");
             StartCoroutine(EsperarYReproducir());
             return;
         }
@@ -61,9 +67,11 @@ public class InstructionTrigger : MonoBehaviour
 
     private IEnumerator EsperarYReproducir()
     {
+        Debug.Log($"[InstructionTrigger] {gameObject.name} está esperando su turno...");
+
+        // Espera indefinida hasta que ningún otro trigger esté activo
         yield return new WaitWhile(() => algunTriggerActivo);
 
-        // Si ya se activó mientras esperaba, no se repite
         if (yaActivado) yield break;
 
         yaActivado = true;
@@ -75,27 +83,30 @@ public class InstructionTrigger : MonoBehaviour
         ejecutando = true;
         algunTriggerActivo = true;
 
+        Debug.Log($"[InstructionTrigger] → Iniciando secuencia: {gameObject.name}");
+
         foreach (var paso in pasos)
         {
             if (textoUI != null)
                 textoUI.text = paso.texto;
 
-            // Reproduce los audios en orden
             if (paso.audios != null && paso.audios.Count > 0)
             {
                 foreach (var clip in paso.audios)
                 {
                     if (clip == null) continue;
 
-                    // Usa un AudioSource temporal para no interrumpir otros sonidos
-                    GameObject tempAudio = new GameObject("TempInstructionAudio");
+                    GameObject tempAudio = new GameObject($"TempAudio_{clip.name}");
                     AudioSource temp = tempAudio.AddComponent<AudioSource>();
-                    temp.clip = clip;
                     temp.spatialBlend = 0f;
-                    temp.volume = 1f;
-                    temp.priority = 0; // prioridad más alta
+                    temp.volume = esSegundoNivel ? 3f : 1f;
+                    temp.priority = 0;
+                    temp.loop = false;
+                    temp.playOnAwake = false;
+                    temp.clip = clip;
                     temp.Play();
 
+                    Debug.Log($"[InstructionTrigger] Reproduciendo audio: {clip.name}");
                     Destroy(tempAudio, clip.length + 0.2f);
                     yield return new WaitForSeconds(clip.length + 0.1f);
                 }
@@ -107,10 +118,19 @@ public class InstructionTrigger : MonoBehaviour
         if (textoUI != null)
             textoUI.text = "";
 
+        Debug.Log($"[InstructionTrigger] Secuencia terminada en {gameObject.name}");
+
         ejecutando = false;
         algunTriggerActivo = false;
-
-        //  Evita que se vuelva a reproducir nunca más
         yaActivado = true;
+    }
+
+    private void OnDestroy()
+    {
+        if (algunTriggerActivo && ejecutando)
+        {
+            Debug.LogWarning($"[InstructionTrigger] {gameObject.name} fue destruido mientras ejecutaba. Liberando bloqueo.");
+            algunTriggerActivo = false;
+        }
     }
 }
