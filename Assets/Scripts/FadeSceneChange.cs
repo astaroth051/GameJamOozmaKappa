@@ -2,16 +2,22 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using TMPro;
 
 public class FadeSceneChange : MonoBehaviour
 {
     [Header("Fade Settings")]
-    public Renderer fadeMaterialRenderer; // Plano negro (con material que tenga canal Alpha)
+    public Renderer fadeMaterialRenderer; // Plano negro con material transparente
     public float fadeDuration = 2f;
 
-    [Header("Audio Opcional (simultáneo antes del cambio)")]
+    [Header("Audio (antes del cambio)")]
     public List<AudioClip> clipsSimultaneos;
     public float volumen = 1f;
+
+    [Header("UI a ocultar durante el fade")]
+    public List<TextMeshProUGUI> textosTMP;
+    public List<Scrollbar> scrollBars;
 
     [Header("Nombre de la escena destino")]
     public string nombreEscenaDestino = "IntroNivel3";
@@ -21,7 +27,7 @@ public class FadeSceneChange : MonoBehaviour
 
     private void Start()
     {
-        // Asegura que el fade inicia completamente transparente
+        // Inicia transparente
         if (fadeMaterialRenderer != null)
         {
             Color c = fadeMaterialRenderer.material.color;
@@ -36,22 +42,25 @@ public class FadeSceneChange : MonoBehaviour
         if (!other.CompareTag("Player")) return;
 
         activado = true;
-        Debug.Log($"[FadeSceneChange] Jugador activó el cambio de escena hacia {nombreEscenaDestino}");
+        Debug.Log($"[FadeSceneChange] Jugador activó cambio de escena hacia {nombreEscenaDestino}");
         StartCoroutine(ActivarCambioDeEscena());
     }
 
     private IEnumerator ActivarCambioDeEscena()
     {
-        // 🔹 Esperar que terminen los audios de instrucciones antes del fade
+        // 🔹 Oculta los elementos de UI antes del fade
+        OcultarUI(true);
+
+        // 🔹 Espera a que terminen audios de instrucciones
         yield return StartCoroutine(EsperarInstructionAudios());
 
-        // 🔹 Fade a negro (oculta pantalla)
+        // 🔹 Fade a negro
         yield return StartCoroutine(Fade(0f, 1f, fadeDuration));
 
-        // 🔹 Reproducir audios opcionales del trigger
+        // 🔹 Reproduce los audios asignados
         if (clipsSimultaneos != null && clipsSimultaneos.Count > 0)
         {
-            Debug.Log("[FadeSceneChange] Reproduciendo audios simultáneos antes del cambio...");
+            Debug.Log("[FadeSceneChange] Reproduciendo audios del FadeSceneChange...");
             foreach (var clip in clipsSimultaneos)
             {
                 if (clip == null) continue;
@@ -67,13 +76,36 @@ public class FadeSceneChange : MonoBehaviour
             }
         }
 
-        // 🔹 Esperar a que terminen los audios propios
+        // 🔹 Espera hasta que terminen todos los audios
         yield return StartCoroutine(EsperarAudiosActivos());
 
-        Debug.Log("[FadeSceneChange] Todos los audios han terminado. Cambiando de escena...");
+        Debug.Log("[FadeSceneChange] Todos los audios finalizaron. Cambiando escena...");
 
-        // 🔹 Cargar la nueva escena
+        // 🔹 Cambia de escena
         SceneManager.LoadScene(nombreEscenaDestino);
+    }
+
+    private void OcultarUI(bool ocultar)
+    {
+        if (textosTMP != null) 
+        {
+            foreach (var texto in textosTMP)
+            {
+                if (texto != null)
+                    texto.enabled = !ocultar;
+            }
+        }
+
+        if (scrollBars != null)
+        {
+            foreach (var sb in scrollBars)
+            {
+                if (sb != null)
+                    sb.gameObject.SetActive(!ocultar);
+            }
+        }
+
+        Debug.Log($"[FadeSceneChange] UI {(ocultar ? "ocultada" : "restaurada")}.");
     }
 
     private IEnumerator Fade(float startAlpha, float endAlpha, float duration)
@@ -121,7 +153,7 @@ public class FadeSceneChange : MonoBehaviour
         }
         return false;
     }
-
+ 
     private bool HayInstructionAudiosActivos()
     {
         InstructionTrigger[] triggers = FindObjectsOfType<InstructionTrigger>();

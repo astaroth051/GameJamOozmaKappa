@@ -204,7 +204,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   videoPlayer: {fileID: 289622805}
-  nextSceneName: SegundoNivel
+  nextSceneName: TercerNivel
 --- !u!1 &673549575
 GameObject:
   m_ObjectHideFlags: 0
