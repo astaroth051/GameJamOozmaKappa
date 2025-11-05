@@ -48,16 +48,16 @@ public class FadeSceneChange : MonoBehaviour
 
     private IEnumerator ActivarCambioDeEscena()
     {
-        // 🔹 Oculta los elementos de UI antes del fade
+        //  Oculta los elementos de UI antes del fade
         OcultarUI(true);
 
-        // 🔹 Espera a que terminen audios de instrucciones
+        //  Espera a que terminen audios de instrucciones
         yield return StartCoroutine(EsperarInstructionAudios());
 
-        // 🔹 Fade a negro
+        //  Fade a negro
         yield return StartCoroutine(Fade(0f, 1f, fadeDuration));
 
-        // 🔹 Reproduce los audios asignados
+        //  Reproduce los audios asignados
         if (clipsSimultaneos != null && clipsSimultaneos.Count > 0)
         {
             Debug.Log("[FadeSceneChange] Reproduciendo audios del FadeSceneChange...");
@@ -76,12 +76,12 @@ public class FadeSceneChange : MonoBehaviour
             }
         }
 
-        // 🔹 Espera hasta que terminen todos los audios
+        //  Espera hasta que terminen todos los audios
         yield return StartCoroutine(EsperarAudiosActivos());
 
         Debug.Log("[FadeSceneChange] Todos los audios finalizaron. Cambiando escena...");
 
-        // 🔹 Cambia de escena
+        //  Cambia de escena
         SceneManager.LoadScene(nombreEscenaDestino);
     }
 
