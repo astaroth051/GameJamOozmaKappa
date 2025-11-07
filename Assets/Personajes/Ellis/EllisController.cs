@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 using System.Collections;
 
-
 [RequireComponent(typeof(CharacterController))]
 public class EllisTankController : MonoBehaviour
 {
@@ -46,6 +45,8 @@ public class EllisTankController : MonoBehaviour
     private AudioSource actionAudio;
     private AudioSource idleAudio;
 
+    private bool esTercerNivel = false;
+
     private void Awake()
     {
         controls = new PlayerControl();
@@ -63,6 +64,10 @@ public class EllisTankController : MonoBehaviour
         idleAudio = gameObject.AddComponent<AudioSource>();
         idleAudio.loop = true;
         idleAudio.playOnAwake = false;
+
+        // Detectar si estamos en TercerNivel
+        string escenaActual = SceneManager.GetActiveScene().name;
+        esTercerNivel = escenaActual == "TercerNivel";
     }
 
     private void OnEnable()
@@ -136,7 +141,7 @@ public class EllisTankController : MonoBehaviour
 
         movementAudio.clip = clip;
         movementAudio.pitch = pitch;
-        movementAudio.volume = 1f;
+        movementAudio.volume = esTercerNivel ? 0.5f : 1f;
         movementAudio.Play();
     }
 
@@ -154,7 +159,12 @@ public class EllisTankController : MonoBehaviour
             jumpTimer = 2.20f;
             PlayImmediate("jump");
             Invoke(nameof(ApplyJumpForce), 0.5f);
-            if (jumpClip) actionAudio.PlayOneShot(jumpClip);
+
+            if (jumpClip)
+            {
+                float vol = esTercerNivel ? 0.5f : 1f;
+                actionAudio.PlayOneShot(jumpClip, vol);
+            }
         }
     }
 
@@ -174,7 +184,6 @@ public class EllisTankController : MonoBehaviour
         }
     }
 
-    // --- PILL controlado ---
     private void StartPill()
     {
         if (isPilling || isJumping || isAnxietyFocus)
@@ -182,23 +191,19 @@ public class EllisTankController : MonoBehaviour
 
         isPilling = true;
 
-        //  Detener cualquier sonido de movimiento o idle
         StopMovementLoop();
         if (idleAudio.isPlaying) idleAudio.Stop();
 
         PlayImmediate("pill");
 
-        // Activar efectos y sonidos de la píldora
         Invoke(nameof(TriggerPillEffect), 0.15f);
         PlayPillClips();
 
-        // Bloquear movimiento durante la animación
         moveInput = Vector2.zero;
         isRunning = false;
 
         Invoke(nameof(EndPill), pillDuration);
     }
-
 
     private void TriggerPillEffect()
     {
@@ -220,6 +225,7 @@ public class EllisTankController : MonoBehaviour
             AudioSource s = gameObject.AddComponent<AudioSource>();
             s.clip = clip;
             s.loop = false;
+            s.volume = esTercerNivel ? 0.5f : 1f;
             s.Play();
             Destroy(s, clip.length + 0.1f);
         }
@@ -231,7 +237,6 @@ public class EllisTankController : MonoBehaviour
         PlayImmediate("idle");
     }
 
-    // --- FOCUS manual ---
     public void TriggerFocus()
     {
         if (focusClips == null || focusClips.Count == 0) return;
@@ -248,7 +253,7 @@ public class EllisTankController : MonoBehaviour
             foreach (var clip in focusClips)
             {
                 if (clip == null) continue;
-                AudioSource.PlayClipAtPoint(clip, transform.position, 1f);
+                AudioSource.PlayClipAtPoint(clip, transform.position, esTercerNivel ? 0.5f : 1f);
             }
             focusTimer = focusInterval;
         }
@@ -266,6 +271,7 @@ public class EllisTankController : MonoBehaviour
         {
             idleAudio.clip = idleLoop;
             idleAudio.loop = true;
+            idleAudio.volume = esTercerNivel ? 0.5f : 1f;
             idleAudio.Play();
         }
     }
@@ -290,7 +296,6 @@ public class EllisTankController : MonoBehaviour
         lastTrigger = trigger;
     }
 
-    // --- FOCUS automático cuando ansiedad llega al máximo ---
     public void TriggerAnxietyFocus()
     {
         if (isAnxietyFocus) return;
@@ -307,7 +312,10 @@ public class EllisTankController : MonoBehaviour
         PlayImmediate("focus");
 
         if (focusClips != null && focusClips.Count > 0)
-            actionAudio.PlayOneShot(focusClips[0]);
+        {
+            float vol = esTercerNivel ? 0.5f : 1f;
+            actionAudio.PlayOneShot(focusClips[0], vol);
+        }
 
         StartCoroutine(RestartSceneAfterFocus());
     }
@@ -319,12 +327,10 @@ public class EllisTankController : MonoBehaviour
         var anxiety = FindObjectOfType<AnxietySystem>();
         if (anxiety != null)
             anxiety.StartCoroutine("FadeToBlack", 2f);
+
         KeyItem.llaveRecogida = false;
         yield return new WaitForSeconds(1.5f);
 
-        UnityEngine.SceneManagement.SceneManager.LoadScene(
-            UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex
-        );
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
-
 }

@@ -27,11 +27,13 @@ public class InstructionTrigger : MonoBehaviour
     private Coroutine rutina;
     private static bool algunTriggerActivo = false;
     private bool esSegundoNivel = false;
+    private bool esTercerNivel = false;
 
     private void Start()
     {
         string escenaActual = SceneManager.GetActiveScene().name;
         esSegundoNivel = escenaActual == "SegundoNivel";
+        esTercerNivel = escenaActual == "TercerNivel";
 
         if (fuenteAudio == null)
             fuenteAudio = gameObject.AddComponent<AudioSource>();
@@ -69,7 +71,6 @@ public class InstructionTrigger : MonoBehaviour
     {
         Debug.Log($"[InstructionTrigger] {gameObject.name} está esperando su turno...");
 
-        // Espera indefinida hasta que ningún otro trigger esté activo
         yield return new WaitWhile(() => algunTriggerActivo);
 
         if (yaActivado) yield break;
@@ -99,7 +100,15 @@ public class InstructionTrigger : MonoBehaviour
                     GameObject tempAudio = new GameObject($"TempAudio_{clip.name}");
                     AudioSource temp = tempAudio.AddComponent<AudioSource>();
                     temp.spatialBlend = 0f;
-                    temp.volume = esSegundoNivel ? 3f : 1f;
+
+                    // Volumen según nivel actual
+                    if (esTercerNivel)
+                        temp.volume = 5f; // volumen doble en TercerNivel
+                    else if (esSegundoNivel)
+                        temp.volume = 3f;
+                    else
+                        temp.volume = 1f;
+
                     temp.priority = 0;
                     temp.loop = false;
                     temp.playOnAwake = false;

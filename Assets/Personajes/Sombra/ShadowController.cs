@@ -46,6 +46,8 @@ public class ShadowController : MonoBehaviour
     private float nextActionDelay = 0f;
     private bool recentlyTouched = false;
 
+    private bool esTercerNivel = false;
+
     private enum ShadowState { Idle, Walking, Running, Crying }
     private ShadowState currentState;
 
@@ -59,10 +61,14 @@ public class ShadowController : MonoBehaviour
         if (player == null)
             player = GameObject.FindGameObjectWithTag("Player").transform;
 
+        // Detectar escena
+        string escenaActual = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        esTercerNivel = escenaActual == "TercerNivel";
+
         canAct = true;
         StartCoroutine(RandomBehaviorLoop());
 
-        Debug.Log(" La sombra está en escena, esperando ser vista por primera vez...");
+        Debug.Log("La sombra está en escena, esperando ser vista por primera vez...");
     }
 
     private void Update()
@@ -77,7 +83,6 @@ public class ShadowController : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * 2f);
         }
 
-        // Detección del primer avistamiento
         if (!firstSeen)
         {
             Vector3 eyePos = player.position + Vector3.up * 1.6f;
@@ -92,7 +97,7 @@ public class ShadowController : MonoBehaviour
                     if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Sombra"))
                     {
                         firstSeen = true;
-                        Debug.Log(" La sombra ha sido vista por primera vez — Comienza la persecución (RUN).");
+                        Debug.Log("La sombra ha sido vista por primera vez — Comienza la persecución (RUN).");
                         StartCoroutine(HandleFirstSeenSequence());
                     }
                 }
@@ -140,7 +145,7 @@ public class ShadowController : MonoBehaviour
         yield return new WaitForSeconds(waitTime);
         if (!recentlyTouched && !isFading)
         {
-            Debug.Log(" La sombra no alcanzó al jugador, desaparece automáticamente...");
+            Debug.Log("La sombra no alcanzó al jugador, desaparece automáticamente...");
             StartCoroutine(FadeOutAndReappear());
         }
     }
@@ -157,23 +162,19 @@ public class ShadowController : MonoBehaviour
                     nextActionDelay = 0f;
                 }
 
-                // Aumentar probabilidad de "Crying" frente a los demás
                 int roll = Random.Range(0, 20);
-                if (roll < 1) yield return StartCoroutine(StateWithAutoFade(ShadowState.Idle));    // 5%
-                else if (roll < 7) yield return StartCoroutine(WalkAroundPlayer());                // 30%
-                else if (roll < 13) yield return StartCoroutine(RunTowardsPlayer());               // 30%
-                else yield return StartCoroutine(StateWithAutoFade(ShadowState.Crying));           // 35%
-
+                if (roll < 1) yield return StartCoroutine(StateWithAutoFade(ShadowState.Idle));
+                else if (roll < 7) yield return StartCoroutine(WalkAroundPlayer());
+                else if (roll < 13) yield return StartCoroutine(RunTowardsPlayer());
+                else yield return StartCoroutine(StateWithAutoFade(ShadowState.Crying));
 
                 nextActionDelay = Random.Range(minCooldown, maxCooldown);
-                Debug.Log($" Próximo ataque estimado en {nextActionDelay:F1} segundos...");
+                Debug.Log($"Próximo ataque estimado en {nextActionDelay:F1} segundos...");
             }
             yield return null;
         }
     }
 
-
-    // Estados estáticos (Idle o Cry) que desaparecen tras 6 segundos siempre
     private IEnumerator StateWithAutoFade(ShadowState state)
     {
         TriggerState(state);
@@ -181,7 +182,7 @@ public class ShadowController : MonoBehaviour
 
         if (!isFading)
         {
-            Debug.Log($" La sombra estuvo en {state} durante 6s — desaparece para reaparecer cerca...");
+            Debug.Log($"La sombra estuvo en {state} durante 6s — desaparece para reaparecer cerca...");
             yield return StartCoroutine(FadeOutAndReappear());
         }
     }
@@ -195,23 +196,25 @@ public class ShadowController : MonoBehaviour
         animator.ResetTrigger("Crying");
         StopAllAudio();
 
+        float baseVol = esTercerNivel ? 0.5f : 1f; // 🔉 Volumen reducido a la mitad
+
         switch (state)
         {
             case ShadowState.Idle:
                 animator.SetTrigger("Idle");
-                if (firstSeen) PlaySound(idleSource, idleClip, 0.7f);
+                if (firstSeen) PlaySound(idleSource, idleClip, 0.7f * baseVol);
                 break;
             case ShadowState.Walking:
                 animator.SetTrigger("Walking");
-                if (firstSeen) PlaySound(walkSource, walkClip, 0.8f);
+                if (firstSeen) PlaySound(walkSource, walkClip, 0.8f * baseVol);
                 break;
             case ShadowState.Running:
                 animator.SetTrigger("Running");
-                PlaySound(runSource, runClip, 1f);
+                PlaySound(runSource, runClip, 1f * baseVol);
                 break;
             case ShadowState.Crying:
                 animator.SetTrigger("Crying");
-                if (firstSeen) PlaySound(crySource, cryClip, 0.9f);
+                if (firstSeen) PlaySound(crySource, cryClip, 0.9f * baseVol);
                 break;
         }
     }
@@ -270,7 +273,7 @@ public class ShadowController : MonoBehaviour
         SetRenderersVisible(false);
 
         float delay = Random.Range(reappearDelayMin, reappearDelayMax);
-        Debug.Log($" La sombra desapareció. Reaparecerá en aproximadamente {delay:F1} segundos...");
+        Debug.Log($"La sombra desapareció. Reaparecerá en aproximadamente {delay:F1} segundos...");
         yield return new WaitForSeconds(delay);
 
         AppearNearPlayer();
@@ -280,7 +283,7 @@ public class ShadowController : MonoBehaviour
         if (shadowCollider) shadowCollider.enabled = true;
         isFading = false;
 
-        Debug.Log(" La sombra reapareció cerca del jugador y comenzó una nueva persecución.");
+        Debug.Log("La sombra reapareció cerca del jugador y comenzó una nueva persecución.");
         StartCoroutine(RunTowardsPlayer());
     }
 
@@ -335,9 +338,9 @@ public class ShadowController : MonoBehaviour
         source.loop = true;
         source.Play();
     }
+
     public bool GetFirstSeen()
     {
         return firstSeen;
     }
-
 }
