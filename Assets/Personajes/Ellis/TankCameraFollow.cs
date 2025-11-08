@@ -1,9 +1,18 @@
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
 
 public class TankCameraFollow : MonoBehaviour
 {
-    [Header("Objetivo")]
-    public Transform target; 
+    public enum CameraMode { ThirdPerson, FirstPerson }
+
+    [Header("Modo de cámara")]
+    public CameraMode cameraMode = CameraMode.ThirdPerson;
+    public Transform firstPersonPoint;
+    public float transitionSpeed = 5f;
+
+    [Header("Objetivo (tercera persona)")]
+    public Transform target;
     public Vector3 offset = new Vector3(0, 1.5f, -1.8f);
 
     [Header("Ajustes de cámara")]
@@ -13,18 +22,28 @@ public class TankCameraFollow : MonoBehaviour
     public float stability = 0.95f;
     public float movimientoMinimo = 0.5f;
 
-    [Header("Colisión de cámara")]
+    [Header("Colisión de cámara (solo tercera persona)")]
     public float radioColision = 0.3f;
-    public float distanciaMinima = 0.8f;  // más segura para no acercar tanto
-    public float alturaMinima = 0.5f;     // límite para no bajar demasiado
+    public float distanciaMinima = 0.8f;
+    public float alturaMinima = 0.5f;
     public LayerMask capasColision;
+
+    [Header("Post-Procesado / Excepción")]
+    public Volume globalVolume;              // Volume global (blanco y negro)
+    public LayerMask ignorePostFXLayers;     // Capas que NO deben verse afectadas por el Volume
+    public float detectionRadius = 3f;       // Distancia de detección (metros)
+    public bool debugDetection = false;      // Mostrar mensajes / gizmos
+    public float transitionTime = 3f;        // Duración del fade (segundos)
 
     private Vector3 smoothedTargetPos;
     private float smoothedYaw;
     private Vector3 ultimaPosicion;
     private float distanciaActual;
 
-    void Start()
+    private float currentVelocity;
+    private bool allowPostFXLogic = false;   // Solo se activa en CuartoNivel
+
+    private void Start()
     {
         if (!target)
         {
@@ -37,13 +56,40 @@ public class TankCameraFollow : MonoBehaviour
         smoothedYaw = target.rotation.eulerAngles.y;
         ultimaPosicion = target.position;
         distanciaActual = offset.magnitude;
+
+        if (globalVolume != null)
+            globalVolume.weight = 1f; // comienza con FX activo
+
+        // --- Activar postFX dinámico solo si estamos en CuartoNivel ---
+        string currentScene = SceneManager.GetActiveScene().name;
+        if (currentScene == "CuartoNivel")
+        {
+            allowPostFXLogic = true;
+            if (debugDetection) Debug.Log("PostFX dinámico activado: escena CuartoNivel");
+        }
+        else
+        {
+            allowPostFXLogic = false;
+            if (debugDetection) Debug.Log($"Escena {currentScene}: PostFX fijo (sin control dinámico)");
+        }
     }
 
-    void LateUpdate()
+    private void LateUpdate()
     {
         if (!target) return;
 
-        // Movimiento del objetivo
+        if (cameraMode == CameraMode.ThirdPerson)
+            UpdateThirdPerson();
+        else
+            UpdateFirstPerson();
+
+        // Solo ejecutar detección si está permitido
+        if (allowPostFXLogic)
+            CheckPostFXExclusion();
+    }
+
+    private void UpdateThirdPerson()
+    {
         Vector3 delta = target.position - ultimaPosicion;
         Vector2 planoXZ = new Vector2(delta.x, delta.z);
         float velocidadPlano = planoXZ.magnitude / Time.deltaTime;
@@ -55,40 +101,92 @@ public class TankCameraFollow : MonoBehaviour
 
         ultimaPosicion = target.position;
 
-        // Rotación suave
         float targetYaw = target.rotation.eulerAngles.y;
         smoothedYaw = Mathf.LerpAngle(smoothedYaw, targetYaw, Time.deltaTime * smoothRotation);
         Quaternion yawRotation = Quaternion.Euler(0, smoothedYaw, 0);
 
-        // Posición ideal de la cámara
         Vector3 desiredPosition = smoothedTargetPos + yawRotation * offset;
-
-        // Detección de colisión
         Vector3 direction = (desiredPosition - target.position).normalized;
         float desiredDistance = offset.magnitude;
 
         if (Physics.SphereCast(target.position, radioColision, direction, out RaycastHit hit, desiredDistance, capasColision))
-        {
             distanciaActual = Mathf.Clamp(hit.distance * 0.9f, distanciaMinima, desiredDistance);
-        }
         else
-        {
             distanciaActual = Mathf.Lerp(distanciaActual, desiredDistance, Time.deltaTime * smoothPosition);
-        }
 
-        // Aplica la distancia ajustada
         desiredPosition = target.position + direction * distanciaActual;
 
-        // --- CORRECCIÓN VERTICAL ---
-        // Evita que la cámara baje demasiado al acercarse
         float alturaDeseada = target.position.y + offset.y;
         if (desiredPosition.y < alturaDeseada - alturaMinima)
             desiredPosition.y = alturaDeseada - alturaMinima;
-        // ----------------------------
 
-        // Suavizado de movimiento y rotación
         transform.position = Vector3.Lerp(transform.position, desiredPosition, Time.deltaTime * smoothPosition);
         Quaternion desiredRotation = Quaternion.Euler(tiltAngle, smoothedYaw, 0);
         transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, Time.deltaTime * smoothRotation);
+    }
+
+    private void UpdateFirstPerson()
+    {
+        if (firstPersonPoint == null)
+        {
+            Debug.LogWarning("[TankCameraFollow] No se ha asignado el punto de vista de primera persona.");
+            return;
+        }
+
+        transform.position = Vector3.Lerp(transform.position, firstPersonPoint.position, Time.deltaTime * transitionSpeed);
+        transform.rotation = Quaternion.Slerp(transform.rotation, firstPersonPoint.rotation, Time.deltaTime * transitionSpeed);
+    }
+
+    // --- Detección suave solo si estamos en CuartoNivel ---
+    private void CheckPostFXExclusion()
+    {
+        if (globalVolume == null) return;
+
+        GameObject[] ignoredObjects = FindObjectsOfType<GameObject>();
+        bool foundIgnoreObject = false;
+
+        Plane[] planes = GeometryUtility.CalculateFrustumPlanes(GetComponent<Camera>());
+
+        foreach (GameObject obj in ignoredObjects)
+        {
+            if (!obj.activeInHierarchy) continue;
+            if (((1 << obj.layer) & ignorePostFXLayers) == 0) continue;
+
+            Renderer r = obj.GetComponent<Renderer>();
+            if (r == null) continue;
+
+            if (!GeometryUtility.TestPlanesAABB(planes, r.bounds)) continue;
+
+            float dist = Vector3.Distance(transform.position, obj.transform.position);
+            if (dist <= detectionRadius)
+            {
+                foundIgnoreObject = true;
+                break;
+            }
+        }
+
+        float target = foundIgnoreObject ? 0f : 1f;
+
+        // Suavizado (≈3 s)
+        globalVolume.weight = Mathf.SmoothDamp(globalVolume.weight, target, ref currentVelocity, transitionTime);
+
+        if (debugDetection)
+        {
+          
+        }
+    }
+
+    // Cambiar modo de cámara desde UI o código
+    public void SetCameraMode(CameraMode mode)
+    {
+        cameraMode = mode;
+    }
+
+    // Gizmo visual de detección
+    private void OnDrawGizmosSelected()
+    {
+        if (!debugDetection) return;
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, detectionRadius);
     }
 }

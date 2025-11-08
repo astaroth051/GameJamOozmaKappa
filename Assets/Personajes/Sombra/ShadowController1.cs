@@ -42,7 +42,7 @@ public class ShadowController1 : MonoBehaviour
 
     private bool canAct = true;
     private bool isFading = false;
-    private bool isChasing = false;
+
     private float nextActionDelay = 0f;
 
     private enum ShadowState { Idle, Walking, Running, Crying }

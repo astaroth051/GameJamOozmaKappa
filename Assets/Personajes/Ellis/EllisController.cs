@@ -46,6 +46,10 @@ public class EllisTankController : MonoBehaviour
     private AudioSource idleAudio;
 
     private bool esTercerNivel = false;
+    private bool esCuartoNivel = false; //  NUEVO
+
+    private float velocidadBaseWalk;
+    private float velocidadBaseRun;
 
     private void Awake()
     {
@@ -65,9 +69,27 @@ public class EllisTankController : MonoBehaviour
         idleAudio.loop = true;
         idleAudio.playOnAwake = false;
 
-        // Detectar si estamos en TercerNivel
+        // Detectar escena actual
         string escenaActual = SceneManager.GetActiveScene().name;
         esTercerNivel = escenaActual == "TercerNivel";
+        esCuartoNivel = escenaActual == "CuartoNivel";
+
+        // Guardar velocidades originales
+        velocidadBaseWalk = walkSpeed;
+        velocidadBaseRun = runSpeed;
+
+        //  Si estamos en CuartoNivel, ralentizamos todo
+        if (esCuartoNivel)
+        {
+            walkSpeed *= 0.4f;
+            runSpeed *= 0.4f;
+
+            movementAudio.pitch = 0.4f;
+            actionAudio.pitch = 0.4f;
+            idleAudio.pitch = 0.4f;
+
+            Debug.Log(" Nivel 4 detectado: movimiento, audio y salto bloqueados.");
+        }
     }
 
     private void OnEnable()
@@ -76,10 +98,23 @@ public class EllisTankController : MonoBehaviour
 
         controls.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
         controls.Player.Move.canceled += _ => moveInput = Vector2.zero;
-        controls.Player.Jump.performed += _ => StartJump();
+
+        // 🔹 Bloquea salto si está en CuartoNivel
+        controls.Player.Jump.performed += _ =>
+        {
+            if (!esCuartoNivel) StartJump();
+            else Debug.Log("⚫ Ellis no puede saltar en este nivel (CuartoNivel).");
+        };
+
         controls.Player.Run.started += _ => isRunning = true;
         controls.Player.Run.canceled += _ => isRunning = false;
-        controls.Player.Pill.performed += _ => StartPill();
+
+        // Bloquear calmantes si estamos en CuartoNivel
+        controls.Player.Pill.performed += _ =>
+        {
+            if (!esCuartoNivel) StartPill();
+            else Debug.Log(" Ellis no puede tomar calmantes en este nivel (CuartoNivel).");
+        };
     }
 
     private void OnDisable() => controls.Player.Disable();
@@ -140,7 +175,8 @@ public class EllisTankController : MonoBehaviour
         if (movementAudio.clip == clip && movementAudio.isPlaying && Mathf.Approximately(movementAudio.pitch, pitch)) return;
 
         movementAudio.clip = clip;
-        movementAudio.pitch = pitch;
+        float finalPitch = esCuartoNivel ? pitch * 0.6f : pitch;
+        movementAudio.pitch = finalPitch;
         movementAudio.volume = esTercerNivel ? 0.5f : 1f;
         movementAudio.Play();
     }
@@ -153,6 +189,9 @@ public class EllisTankController : MonoBehaviour
 
     private void StartJump()
     {
+        // 🔹 Bloquear salto en CuartoNivel
+        if (esCuartoNivel) return;
+
         if (!isJumping && !isPilling && !isAnxietyFocus)
         {
             isJumping = true;
@@ -163,6 +202,8 @@ public class EllisTankController : MonoBehaviour
             if (jumpClip)
             {
                 float vol = esTercerNivel ? 0.5f : 1f;
+                float pitch = esCuartoNivel ? 0.4f : 1f;
+                actionAudio.pitch = pitch;
                 actionAudio.PlayOneShot(jumpClip, vol);
             }
         }
@@ -186,9 +227,7 @@ public class EllisTankController : MonoBehaviour
 
     private void StartPill()
     {
-        if (isPilling || isJumping || isAnxietyFocus)
-            return;
-
+        if (isPilling || isJumping || isAnxietyFocus) return;
         isPilling = true;
 
         StopMovementLoop();
@@ -208,12 +247,10 @@ public class EllisTankController : MonoBehaviour
     private void TriggerPillEffect()
     {
         var post = FindObjectOfType<PostProcessController>();
-        if (post != null)
-            post.PillEffect();
+        if (post != null) post.PillEffect();
 
         var anxiety = FindObjectOfType<AnxietySystem>();
-        if (anxiety != null)
-            anxiety.TakePill();
+        if (anxiety != null) anxiety.TakePill();
     }
 
     private void PlayPillClips()
@@ -226,6 +263,7 @@ public class EllisTankController : MonoBehaviour
             s.clip = clip;
             s.loop = false;
             s.volume = esTercerNivel ? 0.5f : 1f;
+            s.pitch = esCuartoNivel ? 0.4f : 1f;
             s.Play();
             Destroy(s, clip.length + 0.1f);
         }
@@ -253,7 +291,16 @@ public class EllisTankController : MonoBehaviour
             foreach (var clip in focusClips)
             {
                 if (clip == null) continue;
-                AudioSource.PlayClipAtPoint(clip, transform.position, esTercerNivel ? 0.5f : 1f);
+                GameObject tempGO = new GameObject("TempFocusSound");
+                tempGO.transform.position = transform.position;
+
+                AudioSource tempAudio = tempGO.AddComponent<AudioSource>();
+                tempAudio.clip = clip;
+                tempAudio.volume = esTercerNivel ? 0.5f : 1f;
+                tempAudio.pitch = esCuartoNivel ? 0.4f : 1f;
+                tempAudio.Play();
+
+                Destroy(tempGO, clip.length / tempAudio.pitch + 0.1f);
             }
             focusTimer = focusInterval;
         }
@@ -272,6 +319,7 @@ public class EllisTankController : MonoBehaviour
             idleAudio.clip = idleLoop;
             idleAudio.loop = true;
             idleAudio.volume = esTercerNivel ? 0.5f : 1f;
+            idleAudio.pitch = esCuartoNivel ? 0.4f : 1f;
             idleAudio.Play();
         }
     }
@@ -314,6 +362,8 @@ public class EllisTankController : MonoBehaviour
         if (focusClips != null && focusClips.Count > 0)
         {
             float vol = esTercerNivel ? 0.5f : 1f;
+            float pitch = esCuartoNivel ? 0.4f : 1f;
+            actionAudio.pitch = pitch;
             actionAudio.PlayOneShot(focusClips[0], vol);
         }
 
