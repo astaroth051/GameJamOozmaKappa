@@ -29,11 +29,11 @@ public class TankCameraFollow : MonoBehaviour
     public LayerMask capasColision;
 
     [Header("Post-Procesado / Excepción")]
-    public Volume globalVolume;              // Volume global (blanco y negro)
-    public LayerMask ignorePostFXLayers;     // Capas que NO deben verse afectadas por el Volume
-    public float detectionRadius = 3f;       // Distancia de detección (metros)
-    public bool debugDetection = false;      // Mostrar mensajes / gizmos
-    public float transitionTime = 3f;        // Duración del fade (segundos)
+    public Volume globalVolume;
+    public LayerMask ignorePostFXLayers;
+    public float detectionRadius = 3f;
+    public bool debugDetection = false;
+    public float transitionTime = 3f;
 
     private Vector3 smoothedTargetPos;
     private float smoothedYaw;
@@ -41,7 +41,8 @@ public class TankCameraFollow : MonoBehaviour
     private float distanciaActual;
 
     private float currentVelocity;
-    private bool allowPostFXLogic = false;   // Solo se activa en CuartoNivel
+    private bool allowPostFXLogic = false;
+    [HideInInspector] public bool freezeCamera = false; // ★ agregado para FuneralSequence
 
     private void Start()
     {
@@ -58,19 +59,13 @@ public class TankCameraFollow : MonoBehaviour
         distanciaActual = offset.magnitude;
 
         if (globalVolume != null)
-            globalVolume.weight = 1f; // comienza con FX activo
+            globalVolume.weight = 1f;
 
-        // --- Activar postFX dinámico solo si estamos en CuartoNivel ---
         string currentScene = SceneManager.GetActiveScene().name;
         if (currentScene == "CuartoNivel")
         {
             allowPostFXLogic = true;
             if (debugDetection) Debug.Log("PostFX dinámico activado: escena CuartoNivel");
-        }
-        else
-        {
-            allowPostFXLogic = false;
-            if (debugDetection) Debug.Log($"Escena {currentScene}: PostFX fijo (sin control dinámico)");
         }
     }
 
@@ -78,12 +73,19 @@ public class TankCameraFollow : MonoBehaviour
     {
         if (!target) return;
 
+        // ★ agregado para FuneralSequence (congelar sin romper nada)
+        if (freezeCamera)
+        {
+            if (allowPostFXLogic)
+                CheckPostFXExclusion();
+            return;
+        }
+
         if (cameraMode == CameraMode.ThirdPerson)
             UpdateThirdPerson();
         else
             UpdateFirstPerson();
 
-        // Solo ejecutar detección si está permitido
         if (allowPostFXLogic)
             CheckPostFXExclusion();
     }
@@ -172,7 +174,7 @@ public class TankCameraFollow : MonoBehaviour
 
         if (debugDetection)
         {
-          
+
         }
     }
 

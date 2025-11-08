@@ -99,14 +99,21 @@ public class EllisTankController : MonoBehaviour
         controls.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
         controls.Player.Move.canceled += _ => moveInput = Vector2.zero;
 
-        // 🔹 Bloquea salto si está en CuartoNivel
+        //  Bloquea salto si está en CuartoNivel
         controls.Player.Jump.performed += _ =>
         {
             if (!esCuartoNivel) StartJump();
-            else Debug.Log("⚫ Ellis no puede saltar en este nivel (CuartoNivel).");
+            else Debug.Log(" Ellis no puede saltar en este nivel (CuartoNivel).");
         };
 
-        controls.Player.Run.started += _ => isRunning = true;
+        controls.Player.Run.started += _ =>
+    {
+        if (!esCuartoNivel)
+            isRunning = true;
+        else
+            Debug.Log(" Ellis no puede correr en este nivel (CuartoNivel).");
+    };
+
         controls.Player.Run.canceled += _ => isRunning = false;
 
         // Bloquear calmantes si estamos en CuartoNivel
@@ -130,6 +137,8 @@ public class EllisTankController : MonoBehaviour
 
     private void Move()
     {
+        if (esCuartoNivel) isRunning = false;  
+
         bool isGrounded = controller.isGrounded;
         if (isGrounded && velocity.y < 0 && !isJumping)
             velocity.y = -2f;

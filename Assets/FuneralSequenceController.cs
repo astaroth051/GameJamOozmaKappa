@@ -1,28 +1,28 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
-using Cinemachine;
+using System.Collections.Generic;
 
 public class FuneralSequenceController : MonoBehaviour
 {
     [Header("Referencias principales")]
     public GameObject ellis;
-    public AudioClip narrationClip;         
+    public AudioClip narrationClip;
     public Camera mainCamera;
-    public Transform focusPoint;
     public Renderer fadeRenderer;
     public string nextSceneName = "IntroNivel5";
+
+    [Header("Puntos de cámara (en orden)")]
+    public List<Transform> focusPoints;   // varios puntos
+    public float timePerPoint = 5f;       // duración por punto
+    public float pauseBetweenPoints = 0.5f; // pequeña pausa entre puntos
 
     [Header("Colliders de activación")]
     public Collider firstTrigger;
     public Collider secondTrigger;
 
     [Header("Transiciones")]
-    public float cameraFocusTime = 2.5f;
-    public float fadeToBlackTime = 2f;
-    public float fadeToWhiteTime = 3f;
-    public Color fadeToBlackColor = Color.black;
-    public Color fadeToWhiteColor = Color.white;
+    public float fadeDuration = 3f;
 
     private bool firstActivated = false;
     private bool secondActivated = false;
@@ -30,6 +30,7 @@ public class FuneralSequenceController : MonoBehaviour
     private MonoBehaviour ellisController;
     private Material fadeMaterial;
     private AudioSource narrationSource;
+    private TankCameraFollow tankCam;
 
     private void Start()
     {
@@ -38,12 +39,7 @@ public class FuneralSequenceController : MonoBehaviour
             ellisController = ellis.GetComponent<MonoBehaviour>();
             Debug.Log("[FuneralSequence] Ellis detectado correctamente.");
         }
-        else
-        {
-            Debug.LogWarning("[FuneralSequence] No se asignó el objeto Ellis.");
-        }
 
-        // Crear automáticamente el AudioSource si hay un clip
         if (narrationClip != null)
         {
             narrationSource = gameObject.AddComponent<AudioSource>();
@@ -51,172 +47,123 @@ public class FuneralSequenceController : MonoBehaviour
             narrationSource.playOnAwake = false;
             narrationSource.spatialBlend = 0f;
             narrationSource.volume = 1f;
-            Debug.Log("[FuneralSequence] AudioSource creado automáticamente con clip: " + narrationClip.name);
-        }
-        else
-        {
-            Debug.LogWarning("[FuneralSequence] No se asignó ningún clip de narración.");
         }
 
-        // Preparar material de fade
         if (fadeRenderer != null)
         {
             fadeMaterial = fadeRenderer.material;
-            fadeMaterial.color = new Color(1, 1, 1, 0);
-            fadeMaterial.SetColor("_EmissionColor", Color.black);
-            Debug.Log("[FuneralSequence] Material de fade inicializado en transparente.");
-        }
-    }
-
-    // Detecta entrada a los triggers
-    private void OnTriggerEnter(Collider other)
-    {
-        if (!other.CompareTag("Player"))
-        {
-            Debug.Log("[FuneralSequence] Se detectó colisión con " + other.name + " pero no tiene el tag 'Player'. Ignorado.");
-            return;
+            Color c = fadeMaterial.color;
+            c.a = 0f;
+            fadeMaterial.color = c;
         }
 
-        Debug.Log("[FuneralSequence] El jugador (" + other.name + ") entró a un trigger: " + other.gameObject.name);
-
-        if (firstTrigger != null && other.bounds.Intersects(firstTrigger.bounds))
-        {
-            Debug.Log("[FuneralSequence] Colisión confirmada con PRIMER trigger.");
-            OnZoneEntered(true);
-        }
-        else if (secondTrigger != null && other.bounds.Intersects(secondTrigger.bounds))
-        {
-            Debug.Log("[FuneralSequence] Colisión confirmada con SEGUNDO trigger.");
-            OnZoneEntered(false);
-        }
-        else
-        {
-            Debug.Log("[FuneralSequence] El collider no coincide con los triggers definidos.");
-        }
+        if (mainCamera != null)
+            tankCam = mainCamera.GetComponent<TankCameraFollow>();
     }
 
     public void OnZoneEntered(bool isFirstZone)
     {
-        if (isFirstZone)
+        if (isFirstZone && !firstActivated)
         {
-            if (!firstActivated)
-            {
-                Debug.Log("[FuneralSequence] Primer trigger confirmado. Reproduciendo audio...");
-                StartCoroutine(PlayFirstAudio());
-                firstActivated = true;
-            }
-            else Debug.Log("[FuneralSequence] Primer trigger ya fue activado antes.");
+            firstActivated = true;
+            StartCoroutine(PlayFirstAudio());
         }
-        else
+        else if (!isFirstZone && !secondActivated)
         {
-            if (!secondActivated)
-            {
-                Debug.Log("[FuneralSequence] Segundo trigger confirmado. Iniciando secuencia final...");
-                StartCoroutine(FinalSequence());
-                secondActivated = true;
-            }
-            else Debug.Log("[FuneralSequence] Segundo trigger ya fue activado antes.");
+            secondActivated = true;
+            StartCoroutine(FinalSequence());
         }
     }
 
     private IEnumerator PlayFirstAudio()
     {
-        if (narrationSource == null || narrationSource.clip == null)
-        {
-            Debug.LogWarning("[FuneralSequence] No hay clip de narración asignado.");
-            yield break;
-        }
-
-        if (!narrationSource.isPlaying)
-        {
-            narrationSource.Play();
-            Debug.Log("[FuneralSequence] Reproduciendo audio: " + narrationSource.clip.name);
-        }
-        else
-        {
-            Debug.Log("[FuneralSequence] Audio ya estaba reproduciéndose.");
-        }
-        yield return null;
+        if (narrationSource == null || narrationSource.clip == null) yield break;
+        narrationSource.Play();
+        Debug.Log("[FuneralSequence] Reproduciendo audio: " + narrationSource.clip.name);
     }
 
     private IEnumerator FinalSequence()
     {
-        if (sequenceRunning)
-        {
-            Debug.Log("[FuneralSequence] Secuencia final ya en curso, ignorando duplicado.");
-            yield break;
-        }
-
+        if (sequenceRunning) yield break;
         sequenceRunning = true;
+
         Debug.Log("[FuneralSequence] Iniciando secuencia final.");
 
         if (ellisController != null)
-        {
             ellisController.enabled = false;
-            Debug.Log("[FuneralSequence] Movimiento de Ellis desactivado.");
-        }
 
-        // Enfoque de cámara
-        float t = 0f;
-        Vector3 initialPos = mainCamera.transform.position;
-        Quaternion initialRot = mainCamera.transform.rotation;
-        Debug.Log("[FuneralSequence] Moviendo cámara hacia el anillo...");
-
-        while (t < cameraFocusTime)
+        if (tankCam != null)
         {
-            t += Time.deltaTime;
-            Vector3 direction = (focusPoint.position - mainCamera.transform.position).normalized;
-            Quaternion lookRot = Quaternion.LookRotation(direction, Vector3.up);
-
-            mainCamera.transform.rotation = Quaternion.Slerp(initialRot, lookRot, t / cameraFocusTime);
-            mainCamera.transform.position = Vector3.Lerp(initialPos, focusPoint.position - direction * 1.5f, t / cameraFocusTime);
-            yield return null;
+            tankCam.freezeCamera = true;
+            Debug.Log("[FuneralSequence] Cámara congelada.");
         }
-        Debug.Log("[FuneralSequence] Cámara enfocada en el anillo.");
 
-        // Fade a negro
-        Debug.Log("[FuneralSequence] Iniciando fade a negro.");
-        yield return StartCoroutine(FadeMaterialColor(fadeToBlackColor, fadeToBlackTime));
-        Debug.Log("[FuneralSequence] Fade a negro completado.");
+        // --- Recorre cada punto suavemente ---
+        if (focusPoints != null && focusPoints.Count > 0)
+        {
+            for (int i = 0; i < focusPoints.Count; i++)
+            {
+                Transform point = focusPoints[i];
+                if (point == null) continue;
 
-        // Esperar audio
+                Vector3 startPos = mainCamera.transform.position;
+                Quaternion startRot = mainCamera.transform.rotation;
+                float elapsed = 0f;
+
+                while (elapsed < timePerPoint)
+                {
+                    elapsed += Time.deltaTime;
+                    float t = Mathf.Clamp01(elapsed / timePerPoint);
+
+                    // Suavizado tipo ease-in/out (más cinematográfico)
+                    float smoothT = Mathf.SmoothStep(0f, 1f, t);
+
+                    mainCamera.transform.position = Vector3.Lerp(startPos, point.position, smoothT);
+                    mainCamera.transform.rotation = Quaternion.Slerp(startRot, point.rotation, smoothT);
+                    yield return null;
+                }
+
+                mainCamera.transform.position = point.position;
+                mainCamera.transform.rotation = point.rotation;
+
+                if (pauseBetweenPoints > 0)
+                    yield return new WaitForSeconds(pauseBetweenPoints);
+            }
+        }
+
+        // Esperar fin del audio antes del fade
         if (narrationSource != null)
         {
-            Debug.Log("[FuneralSequence] Esperando a que termine el audio...");
-            while (narrationSource.isPlaying) yield return null;
-            Debug.Log("[FuneralSequence] Audio finalizado.");
+            while (narrationSource.isPlaying)
+                yield return null;
         }
 
-        // Fade a blanco y cambio de escena
-        Debug.Log("[FuneralSequence] Iniciando fade a blanco.");
-        yield return StartCoroutine(FadeMaterialColor(fadeToWhiteColor, fadeToWhiteTime));
-        Debug.Log("[FuneralSequence] Fade a blanco completado. Cargando: " + nextSceneName);
+        Debug.Log("[FuneralSequence] Audio finalizado, iniciando fade...");
 
+        yield return StartCoroutine(FadeInMaterial(fadeDuration));
+
+        Debug.Log("[FuneralSequence] Fade completado. Cargando siguiente escena...");
         SceneManager.LoadScene(nextSceneName);
     }
 
-    private IEnumerator FadeMaterialColor(Color targetColor, float duration)
+    private IEnumerator FadeInMaterial(float duration)
     {
-        if (fadeMaterial == null)
-        {
-            Debug.LogWarning("[FuneralSequence] No hay material de fade asignado.");
-            yield break;
-        }
+        if (fadeMaterial == null) yield break;
 
-        Color startColor = fadeMaterial.color;
-        Color startEmission = fadeMaterial.GetColor("_EmissionColor");
-        Color targetEmission = targetColor * 2f;
+        Color c = fadeMaterial.color;
+        float startAlpha = c.a;
         float elapsed = 0f;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            float k = Mathf.Clamp01(elapsed / duration);
-            fadeMaterial.color = Color.Lerp(startColor, targetColor, k);
-            fadeMaterial.SetColor("_EmissionColor", Color.Lerp(startEmission, targetEmission, k));
+            float t = Mathf.Clamp01(elapsed / duration);
+            c.a = Mathf.Lerp(startAlpha, 1f, t);
+            fadeMaterial.color = c;
             yield return null;
         }
 
-        Debug.Log("[FuneralSequence] Fade completado hacia color: " + targetColor);
+        c.a = 1f;
+        fadeMaterial.color = c;
     }
 }
