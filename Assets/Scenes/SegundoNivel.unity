@@ -61315,21 +61315,6 @@ MonoBehaviour:
   m_PointerBehavior: 0
   m_CursorLockBehavior: 0
   m_ScrollDeltaPerTick: 6
---- !u!4 &1366008591726982537
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7227632989257122525}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.8147717, y: -0.9052361, z: 3.4141068}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1522428870603681620
 GameObject:
   m_ObjectHideFlags: 0
@@ -61893,7 +61878,7 @@ MonoBehaviour:
   pillReduction: 30
   maxPillsBeforeOverdose: 3
   pillDecayRate: 0.05
-  volume: {fileID: 6398461745200396623}
+  volume: {fileID: 0}
   heartbeatAudio: {fileID: 33914965648511683}
   breathingAudio: {fileID: 5838865175995652237}
   anxietyBar: {fileID: 1191003542345456307}
@@ -63112,18 +63097,6 @@ Transform:
   - {fileID: 112996720832123809}
   m_Father: {fileID: 7998404310983245537}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5386042254743594344
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7227632989257122525}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a70d5e686db20b649a4bd03104ee31df, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &5477016534031990618
 Transform:
   m_ObjectHideFlags: 0
@@ -63699,23 +63672,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &6398461745200396623
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7227632989257122525}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_IsGlobal: 1
-  priority: 0
-  blendDistance: 0
-  weight: 1
-  sharedProfile: {fileID: 11400000, guid: 1bbbfbf7b0f97e04fb450e18e8d5e766, type: 2}
 --- !u!222 &6420707367359045105
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -63849,6 +63805,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd1fb2b7b767ae944bac5af64d17aeba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cameraMode: 0
+  firstPersonPoint: {fileID: 0}
+  transitionSpeed: 5
   target: {fileID: 5207005726835589106}
   offset: {x: 0, y: 3.6, z: -1.5}
   smoothPosition: 8
@@ -63862,6 +63821,14 @@ MonoBehaviour:
   capasColision:
     serializedVersion: 2
     m_Bits: 0
+  globalVolume: {fileID: 0}
+  ignorePostFXLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  detectionRadius: 3
+  debugDetection: 0
+  transitionTime: 3
+  freezeCamera: 0
 --- !u!1 &6772160823940014026
 GameObject:
   m_ObjectHideFlags: 0
@@ -64030,24 +63997,6 @@ Transform:
   - {fileID: 3452917026180625894}
   m_Father: {fileID: 8277205321918434041}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &7227632989257122525
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1366008591726982537}
-  - component: {fileID: 6398461745200396623}
-  - component: {fileID: 5386042254743594344}
-  m_Layer: 0
-  m_Name: POST PROCESADO ESCENA
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
 --- !u!1 &7251417305534557049
 GameObject:
   m_ObjectHideFlags: 0
@@ -64997,7 +64946,7 @@ MonoBehaviour:
   priority: 0
   blendDistance: 0
   weight: 1
-  sharedProfile: {fileID: 11400000, guid: 1bbbfbf7b0f97e04fb450e18e8d5e766, type: 2}
+  sharedProfile: {fileID: 11400000, guid: 376eaae822e687647b13cbe600e3f6d5, type: 2}
 --- !u!1 &9138239304333708508
 GameObject:
   m_ObjectHideFlags: 0
@@ -65038,7 +64987,6 @@ SceneRoots:
   - {fileID: 4900206578062885635}
   - {fileID: 5207005726835589106}
   - {fileID: 9190244883727899943}
-  - {fileID: 1366008591726982537}
   - {fileID: 2059273656994155189}
   - {fileID: 1325038271}
   - {fileID: 1390848177}
