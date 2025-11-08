@@ -21926,6 +21926,38 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 876714685045984041, guid: 6c3d2e7a04cb3be479b85066ded6c32d, type: 3}
+      propertyPath: m_RoomHF
+      value: -151
+      objectReference: {fileID: 0}
+    - target: {fileID: 876714685045984041, guid: 6c3d2e7a04cb3be479b85066ded6c32d, type: 3}
+      propertyPath: m_DecayTime
+      value: 7.56
+      objectReference: {fileID: 0}
+    - target: {fileID: 876714685045984041, guid: 6c3d2e7a04cb3be479b85066ded6c32d, type: 3}
+      propertyPath: m_Diffusion
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 876714685045984041, guid: 6c3d2e7a04cb3be479b85066ded6c32d, type: 3}
+      propertyPath: m_ReverbDelay
+      value: 0.03
+      objectReference: {fileID: 0}
+    - target: {fileID: 876714685045984041, guid: 6c3d2e7a04cb3be479b85066ded6c32d, type: 3}
+      propertyPath: m_ReverbLevel
+      value: 774
+      objectReference: {fileID: 0}
+    - target: {fileID: 876714685045984041, guid: 6c3d2e7a04cb3be479b85066ded6c32d, type: 3}
+      propertyPath: m_DecayHFRatio
+      value: 0.91
+      objectReference: {fileID: 0}
+    - target: {fileID: 876714685045984041, guid: 6c3d2e7a04cb3be479b85066ded6c32d, type: 3}
+      propertyPath: m_ReverbPreset
+      value: 26
+      objectReference: {fileID: 0}
+    - target: {fileID: 876714685045984041, guid: 6c3d2e7a04cb3be479b85066ded6c32d, type: 3}
+      propertyPath: m_ReflectionsLevel
+      value: -626
+      objectReference: {fileID: 0}
     - target: {fileID: 914823027347192408, guid: 6c3d2e7a04cb3be479b85066ded6c32d, type: 3}
       propertyPath: m_LocalPosition.x
       value: 250
