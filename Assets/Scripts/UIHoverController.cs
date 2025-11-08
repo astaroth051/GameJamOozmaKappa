@@ -1,23 +1,30 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 
 public class UIHoverController : MonoBehaviour
 {
     [System.Serializable]
-    public class ButtonData
+    public class UIElementData
     {
         public string name;
-        public Button button;
+        public Selectable selectable;   // Puede ser Button, Dropdown, Slider, etc.
+        public Image image;             // Imagen asociada (asignar directamente en el inspector)
+        public bool isDropdown;         // Marcar si es un Dropdown (para efectos y selección)
     }
 
-    [Header("Botones controlados (en orden de navegación)")]
-    public List<ButtonData> botones = new List<ButtonData>();
+    [Header("Elementos en orden de navegación")]
+    public List<UIElementData> elementos = new List<UIElementData>();
 
     [Header("Efectos visuales")]
-    public float scaleOnHover = 1.08f; // solo crecimiento
-    public float transitionSpeed = 8f; // suavizado del crecimiento
+    public float scaleOnHover = 1.08f;
+    public float transitionSpeed = 8f;
+    public Color32 selectedColor = new Color32(255, 101, 0, 255); // FF6500
+    public Color32 normalColor = new Color32(255, 255, 255, 255);
+    public float selectedAlpha = 1f;
+    public float normalAlpha = 0.55f;
 
     [Header("Audio")]
     public AudioSource audioSource;
@@ -26,64 +33,103 @@ public class UIHoverController : MonoBehaviour
 
     private int currentIndex = 0;
     private Vector3[] originalScales;
+    private Color32[] originalColors;
     private float lastMoveTime;
     private float moveDelay = 0.25f;
+    private bool initialized = false;
+    private string currentScene;
 
     void Start()
     {
-        int count = botones.Count;
-        originalScales = new Vector3[count];
-
-        for (int i = 0; i < count; i++)
-        {
-            if (botones[i].button == null) continue;
-
-            Button btn = botones[i].button;
-            originalScales[i] = btn.transform.localScale;
-
-            int index = i;
-            btn.onClick.AddListener(() => OnButtonClick(index));
-        }
-
-        // Seleccionar por defecto el botón de "Play" (el primero)
-        if (botones.Count > 0 && botones[0].button != null)
-        {
-            currentIndex = 0;
-            EventSystem.current.SetSelectedGameObject(botones[0].button.gameObject);
-            PlayHoverSound();
-        }
+        currentScene = SceneManager.GetActiveScene().name;
+        InicializarElementos();
     }
 
     void Update()
     {
+        if (!initialized || EventSystem.current.currentSelectedGameObject == null)
+            InicializarElementos();
+
         HandleNavigation();
-        UpdateButtonScales();
+        UpdateVisuals();
+    }
+
+    void InicializarElementos()
+    {
+        int count = elementos.Count;
+        originalScales = new Vector3[count];
+        originalColors = new Color32[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            var sel = elementos[i].selectable;
+            if (!sel) continue;
+
+            originalScales[i] = sel.transform.localScale;
+            if (elementos[i].image != null)
+            {
+                originalColors[i] = elementos[i].image.color;
+                elementos[i].image.raycastTarget = false;
+            }
+
+            // Configura acciones solo si es botón
+            if (sel is Button btn)
+            {
+                btn.onClick.RemoveAllListeners();
+                int index = i;
+                btn.onClick.AddListener(() => OnButtonClick(index));
+            }
+        }
+
+        // selecciona el primero activo
+        for (int i = 0; i < elementos.Count; i++)
+        {
+            if (elementos[i].selectable && elementos[i].selectable.gameObject.activeInHierarchy)
+            {
+                currentIndex = i;
+                EventSystem.current.SetSelectedGameObject(elementos[i].selectable.gameObject);
+                PlayHoverSound();
+                break;
+            }
+        }
+
+        initialized = true;
     }
 
     void HandleNavigation()
     {
-        float vertical = Input.GetAxisRaw("Vertical");
+        float vertical = 0f;
+        try { vertical = Input.GetAxisRaw("Vertical"); } catch { vertical = 0f; }
 
         if (vertical > 0.5f)
-        {
             MoveSelection(-1);
-        }
         else if (vertical < -0.5f)
-        {
             MoveSelection(1);
-        }
 
-        // Confirmar botón
+        // Confirmar (Enter, Espacio, A, X, etc.)
         if (Input.GetButtonDown("Submit") || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))
         {
-            botones[currentIndex].button.onClick.Invoke();
+            var actual = elementos[currentIndex];
+            if (actual.selectable != null)
+            {
+                if (actual.isDropdown && actual.selectable is Dropdown dropdown)
+                {
+                    dropdown.Show(); // abre el menú del Dropdown
+                    PlayClickSound();
+                }
+                else if (actual.selectable is Button button)
+                {
+                    button.onClick.Invoke();
+                    PlayClickSound();
+                }
+            }
         }
 
-        // Detectar selección por mouse o gamepad
+        // Actualizar selección visual si cambia
         GameObject current = EventSystem.current.currentSelectedGameObject;
-        for (int i = 0; i < botones.Count; i++)
+        for (int i = 0; i < elementos.Count; i++)
         {
-            if (botones[i].button != null && current == botones[i].button.gameObject && currentIndex != i)
+            if (elementos[i].selectable && current == elementos[i].selectable.gameObject && currentIndex != i)
             {
                 currentIndex = i;
                 PlayHoverSound();
@@ -94,31 +140,39 @@ public class UIHoverController : MonoBehaviour
 
     void MoveSelection(int direction)
     {
-        if (Time.time - lastMoveTime < moveDelay) return;
-        lastMoveTime = Time.time;
+        if (Time.unscaledTime - lastMoveTime < moveDelay) return;
+        lastMoveTime = Time.unscaledTime;
 
-        currentIndex = Mathf.Clamp(currentIndex + direction, 0, botones.Count - 1);
-
-        if (botones[currentIndex].button != null)
+        currentIndex = Mathf.Clamp(currentIndex + direction, 0, elementos.Count - 1);
+        if (elementos[currentIndex].selectable && elementos[currentIndex].selectable.gameObject.activeInHierarchy)
         {
-            EventSystem.current.SetSelectedGameObject(botones[currentIndex].button.gameObject);
+            EventSystem.current.SetSelectedGameObject(elementos[currentIndex].selectable.gameObject);
             PlayHoverSound();
         }
     }
 
-    void UpdateButtonScales()
+    void UpdateVisuals()
     {
-        for (int i = 0; i < botones.Count; i++)
+        for (int i = 0; i < elementos.Count; i++)
         {
-            if (botones[i].button == null) continue;
+            var sel = elementos[i].selectable;
+            var img = elementos[i].image;
+            if (!sel) continue;
 
-            bool isSelected = EventSystem.current.currentSelectedGameObject == botones[i].button.gameObject;
-            Vector3 targetScale = isSelected
-                ? originalScales[i] * scaleOnHover
-                : originalScales[i];
+            bool selected = EventSystem.current.currentSelectedGameObject == sel.gameObject;
 
-            botones[i].button.transform.localScale =
-                Vector3.Lerp(botones[i].button.transform.localScale, targetScale, Time.unscaledDeltaTime * transitionSpeed);
+            // Escala
+            Vector3 targetScale = selected ? originalScales[i] * scaleOnHover : originalScales[i];
+            sel.transform.localScale = Vector3.Lerp(sel.transform.localScale, targetScale, Time.unscaledDeltaTime * transitionSpeed);
+
+            // Color y alpha
+            if (img != null)
+            {
+                Color32 baseColor = selected ? selectedColor : normalColor;
+                float alpha = selected ? selectedAlpha : normalAlpha;
+                Color finalColor = new Color(baseColor.r / 255f, baseColor.g / 255f, baseColor.b / 255f, alpha);
+                img.color = finalColor;
+            }
         }
     }
 
@@ -129,19 +183,15 @@ public class UIHoverController : MonoBehaviour
 
     void PlayHoverSound()
     {
-        if (audioSource == null || hoverSound == null) return;
-
-        // cortar cualquier sonido previo
+        if (!audioSource || !hoverSound) return;
         audioSource.Stop();
         audioSource.PlayOneShot(hoverSound);
     }
 
     void PlayClickSound()
     {
-        if (audioSource != null && clickSound != null)
-        {
-            audioSource.Stop();
-            audioSource.PlayOneShot(clickSound);
-        }
+        if (!audioSource || !clickSound) return;
+        audioSource.Stop();
+        audioSource.PlayOneShot(clickSound);
     }
 }
