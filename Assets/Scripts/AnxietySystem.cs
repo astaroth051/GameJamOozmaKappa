@@ -18,10 +18,10 @@ public class AnxietySystem : MonoBehaviour
 
     [Header("Valores de ansiedad")]
     [Range(0, 100)][SerializeField] private float anxietyLevel = 0f;
-    [SerializeField] private float anxietyIncreaseRate = 10f;
-    [SerializeField] private float shadowAnxietyRate = 35f;
-    [SerializeField] private float anxietyDecreaseRate = 2.5f;
-    [SerializeField] private float maxAnxiety = 100f;
+    [SerializeField] public float anxietyIncreaseRate = 10f;
+    [SerializeField] public float shadowAnxietyRate = 35f;
+    [SerializeField] public float anxietyDecreaseRate = 2.5f;
+    [SerializeField] public float maxAnxiety = 100f;
     private bool isOverwhelmed = false;
     private bool touchingAnxiety = false;
     private bool touchingShadow = false;
@@ -30,7 +30,7 @@ public class AnxietySystem : MonoBehaviour
     [Header("Píldoras")]
     [SerializeField] private float pillDecaySeconds = 15f;
     [SerializeField] private float pillReduction = 30f;
-    [SerializeField] private int maxPillsBeforeOverdose = 3;
+    [SerializeField] public int maxPillsBeforeOverdose = 3;
     [SerializeField] private float pillDecayRate = 0.05f;
     private float currentPillLevel = 0f;
     private bool isFlashingPill = false;
