@@ -62617,18 +62617,6 @@ Transform:
   - {fileID: 7578870279355259308}
   m_Father: {fileID: 6940194686814902504}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3263468521857440029
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7184776212481756788}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e1701578817119540ae6f20be240eb94, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!95 &3297183250825814040
 Animator:
   serializedVersion: 5
@@ -65275,7 +65263,6 @@ GameObject:
   - component: {fileID: 8746540050498035571}
   - component: {fileID: 4432567170186787253}
   - component: {fileID: 8560024587038079979}
-  - component: {fileID: 3263468521857440029}
   m_Layer: 0
   m_Name: PauseMenu
   m_TagString: Untagged

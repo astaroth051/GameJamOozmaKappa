@@ -1240,7 +1240,6 @@ GameObject:
   - component: {fileID: 8746540051600626514}
   - component: {fileID: 4432567169024456084}
   - component: {fileID: 8560024586011015114}
-  - component: {fileID: 3263468520737019196}
   m_Layer: 0
   m_Name: PauseMenu
   m_TagString: Untagged
@@ -1276,6 +1275,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   continuarButton: {fileID: 4626045761802092243}
+  guardarButton: {fileID: 0}
   opcionesButton: {fileID: 1426467391572445325}
   menuButton: {fileID: 6615980740412829162}
   salirButton: {fileID: 8994372785367900414}
@@ -1294,18 +1294,6 @@ MonoBehaviour:
   panelPausa: {fileID: 1647209404014776463}
   panelJuego: {fileID: 0}
   cooldown: 0.25
---- !u!114 &3263468520737019196
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7184776213451145813}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e1701578817119540ae6f20be240eb94, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &7490872142922089008
 GameObject:
   m_ObjectHideFlags: 0
