@@ -6777,7 +6777,7 @@ GameObject:
   - component: {fileID: 657999014}
   - component: {fileID: 657999015}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: SpawnPointf
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8333,6 +8333,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 43662314950775674, guid: 80bb6ad6c3241b54d9f273f25e2c530d, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1442444264529261464, guid: 80bb6ad6c3241b54d9f273f25e2c530d, type: 3}
       propertyPath: m_LocalPosition.x
       value: 840.4896
@@ -8385,6 +8389,10 @@ PrefabInstance:
       propertyPath: guardarButton
       value: 
       objectReference: {fileID: 823581435}
+    - target: {fileID: 4614817143398160946, guid: 80bb6ad6c3241b54d9f273f25e2c530d, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8560024586011015114, guid: 80bb6ad6c3241b54d9f273f25e2c530d, type: 3}
       propertyPath: panelJuego
       value: 

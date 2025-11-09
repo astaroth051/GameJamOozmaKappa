@@ -2,10 +2,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.IO;
 
-/// <summary>
-/// Sistema simple de guardado basado en JSON + PlayerPrefs.
-/// Guarda: nombre de escena, posición del jugador, nivel de ansiedad.
-/// </summary>
 public static class SaveSystem
 {
     private static string filePath = Application.persistentDataPath + "/save.json";
@@ -18,9 +14,6 @@ public static class SaveSystem
         public float anxietyLevel;
     }
 
-    // -------------------------------
-    // GUARDAR PARTIDA
-    // -------------------------------
     public static void SaveGame()
     {
         GameObject player = GameObject.FindGameObjectWithTag("Player");
@@ -52,18 +45,17 @@ public static class SaveSystem
             anxietyLevel = anxiety
         };
 
-        string json = JsonUtility.ToJson(data, true);
-        File.WriteAllText(filePath, json);
+        File.WriteAllText(filePath, JsonUtility.ToJson(data, true));
 
         PlayerPrefs.SetString("LastScene", sceneName);
         PlayerPrefs.Save();
 
-        Debug.Log($"[SaveSystem] Partida guardada en '{sceneName}' posición ({pos.x:F1}, {pos.y:F1}, {pos.z:F1})");
+        Debug.Log($"[SaveSystem] Guardado en '{sceneName}', pos {pos}");
     }
 
-    // -------------------------------
-    // CARGAR PARTIDA
-    // -------------------------------
+    // ----------------------------------------------------
+    // CARGAR PARTIDA – ARREGLADO
+    // ----------------------------------------------------
     public static void LoadGame()
     {
         if (!HasSave())
@@ -75,43 +67,44 @@ public static class SaveSystem
         string json = File.ReadAllText(filePath);
         SaveData data = JsonUtility.FromJson<SaveData>(json);
 
-        Debug.Log($"[SaveSystem] Cargando partida desde '{data.sceneName}'...");
-
+        Debug.Log($"[SaveSystem] Cargando '{data.sceneName}'...");
 
         SceneManager.sceneLoaded += (scene, mode) =>
         {
             GameObject player = GameObject.FindGameObjectWithTag("Player");
             if (player != null)
             {
-                player.transform.position = new Vector3(data.posX, data.posY, data.posZ);
-                Debug.Log($"[SaveSystem] Posición restaurada a ({data.posX:F1}, {data.posY:F1}, {data.posZ:F1})");
+                // -------------------------
+                // SI HAY UN SPAWNPOINT → NO TELEPORTAR
+                // -------------------------
+                PlayerSpawnPoint spawn = Object.FindFirstObjectByType<PlayerSpawnPoint>();
+                if (spawn != null)
+                {
+                    Debug.Log("[SaveSystem] SpawnPoint detectado → NO mover jugador.");
+                }
+                else
+                {
+                    player.transform.position = new Vector3(data.posX, data.posY, data.posZ);
+                    Debug.Log($"[SaveSystem] Posición cargada → {data.posX}, {data.posY}, {data.posZ}");
+                }
             }
 
+            // Restaurar ansiedad
             var anxietySys = Object.FindFirstObjectByType<AnxietySystem>();
             if (anxietySys != null)
             {
                 var field = typeof(AnxietySystem).GetField("anxietyLevel",
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
                 if (field != null)
-                {
                     field.SetValue(anxietySys, data.anxietyLevel);
-                    Debug.Log($"[SaveSystem] Nivel de ansiedad restaurado a {data.anxietyLevel:F1}");
-                }
             }
         };
 
-        // Cargar finalmente la escena guardada
         SceneManager.LoadScene(data.sceneName);
     }
 
-
-    // -------------------------------
-    // COMPROBAR / BORRAR PARTIDA
-    // -------------------------------
-    public static bool HasSave()
-    {
-        return File.Exists(filePath);
-    }
+    public static bool HasSave() => File.Exists(filePath);
 
     public static void DeleteSave()
     {
@@ -120,7 +113,6 @@ public static class SaveSystem
             File.Delete(filePath);
             PlayerPrefs.DeleteKey("LastScene");
             PlayerPrefs.Save();
-            Debug.Log("[SaveSystem] Partida eliminada correctamente.");
         }
     }
 }

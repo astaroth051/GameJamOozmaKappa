@@ -34682,6 +34682,51 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: bcd72cb9eed3e6b4786b4ba9a8e3278d, type: 3}
   m_PrefabInstance: {fileID: 1004818631}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1010235266
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1010235267}
+  - component: {fileID: 1010235268}
+  m_Layer: 0
+  m_Name: SpawnPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1010235267
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1010235266}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 36.62076, y: -0.04240036, z: -30.81841}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1010235268
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1010235266}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5997bb7d71f91424c9244408033d0d39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spawnPoint: {fileID: 1010235267}
 --- !u!1 &1022950977
 GameObject:
   m_ObjectHideFlags: 0
@@ -77050,6 +77095,10 @@ PrefabInstance:
       propertyPath: guardarButton
       value: 
       objectReference: {fileID: 374893176}
+    - target: {fileID: 4614817143398160946, guid: 80bb6ad6c3241b54d9f273f25e2c530d, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8560024586011015114, guid: 80bb6ad6c3241b54d9f273f25e2c530d, type: 3}
       propertyPath: panelJuego
       value: 
@@ -78165,6 +78214,7 @@ SceneRoots:
   - {fileID: 6246184967253292342}
   - {fileID: 1138787950}
   - {fileID: 8742151057208026661}
+  - {fileID: 1010235267}
   - {fileID: 3525934944564208300}
   - {fileID: 4331539660513550339}
   - {fileID: 7714307981678911245}
