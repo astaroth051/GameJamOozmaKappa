@@ -77,11 +77,6 @@ public static class SaveSystem
 
         Debug.Log($"[SaveSystem] Cargando partida desde '{data.sceneName}'...");
 
-        // --------------------------------------------------
-        // RESTAURAR AUDIO ANTES DE CARGAR LA ESCENA
-        // --------------------------------------------------
-        MusicManager.RestaurarVolumen();
-        AudioListener.volume = 1f;
 
         SceneManager.sceneLoaded += (scene, mode) =>
         {
