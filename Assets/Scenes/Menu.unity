@@ -1438,7 +1438,7 @@ MonoBehaviour:
     targetScene: Controles
   - buttonName: Salir
     button: {fileID: 1557540892}
-    action: 6
+    action: 5
     targetScene: 
 --- !u!4 &1100475222
 Transform:
@@ -1467,25 +1467,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: faeb40265db49084aa718feea8a7fc1f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  botones:
-  - name: Continuar
-    button: {fileID: 179060082}
+  elementos:
+  - name: Cont
+    selectable: {fileID: 179060082}
     image: {fileID: 218622454}
+    isDropdown: 0
   - name: Jugar
-    button: {fileID: 1136553742}
+    selectable: {fileID: 1136553742}
     image: {fileID: 571008255}
+    isDropdown: 0
   - name: Opciones
-    button: {fileID: 1976492404}
+    selectable: {fileID: 1976492404}
     image: {fileID: 2089154922}
+    isDropdown: 0
   - name: Salir
-    button: {fileID: 1557540892}
+    selectable: {fileID: 1557540892}
     image: {fileID: 1132322443}
+    isDropdown: 0
   - name: Creditos
-    button: {fileID: 723317752}
+    selectable: {fileID: 723317752}
     image: {fileID: 272450979}
+    isDropdown: 0
   - name: Controles
-    button: {fileID: 32755056}
+    selectable: {fileID: 32755056}
     image: {fileID: 198156889}
+    isDropdown: 0
   scaleOnHover: 1.05
   transitionSpeed: 8
   selectedColor:
@@ -1494,6 +1500,8 @@ MonoBehaviour:
   normalColor:
     serializedVersion: 2
     rgba: 4294967295
+  selectedAlpha: 1
+  normalAlpha: 0.55
   audioSource: {fileID: 619970939}
   hoverSound: {fileID: 8300000, guid: 7fcbe7947e4b62942b185e0789d94f0f, type: 3}
   clickSound: {fileID: 8300000, guid: accba550abc7de047895cd143629254c, type: 3}
@@ -1992,6 +2000,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1bd13293a218469438758094bb20188c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  panelPausa: {fileID: 0}
+  panelJuego: {fileID: 0}
+  cooldown: 0.25
 --- !u!1 &1557540890
 GameObject:
   m_ObjectHideFlags: 0

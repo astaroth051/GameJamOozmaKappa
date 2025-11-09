@@ -2000,7 +2000,7 @@ MonoBehaviour:
     targetScene: Menu
   - buttonName: Salir
     button: {fileID: 944994382}
-    action: 6
+    action: 5
     targetScene: 
   - buttonName: Continuar
     button: {fileID: 2003417350}

@@ -8,21 +8,20 @@ public class MenuPrincipal : MonoBehaviour
     [System.Serializable]
     public class MenuButton
     {
-        public string buttonName;   // Nombre descriptivo
-        public Button button;       // Referencia al botón en el Canvas
-        public ButtonAction action; // Acción que ejecutará
-        public string targetScene;  // Nombre de la escena (si aplica)
+        public string buttonName;
+        public Button button;
+        public ButtonAction action;
+        public string targetScene;
     }
 
     public enum ButtonAction
     {
         None,
-        LoadScene,
-        LoadSavedGame,
-        NewGame,
-        SaveGame,
-        ReturnToMenu,
-        ExitGame
+        LoadScene,       // Cargar escena específica (por targetScene)
+        ContinueGame,    // Cargar guardado
+        NewGame,         // Empezar desde cero
+        Options,         // Ir a opciones
+        ExitGame         // Salir
     }
 
     [Header("Configuración de botones")]
@@ -30,40 +29,40 @@ public class MenuPrincipal : MonoBehaviour
 
     void Start()
     {
-        // Asigna las funciones a cada botón configurado
         foreach (var b in botones)
         {
             if (b.button != null)
                 b.button.onClick.AddListener(() => EjecutarAccion(b));
         }
 
-        // Configura el estado inicial del botón de continuar
         ActualizarBotonContinuar();
     }
 
-    void Update()
-    {
-        // Por si se guarda o borra partida durante ejecución
-        ActualizarBotonContinuar();
-    }
-
+    // --------------------------------------------
+    // OCULTA O MUESTRA EL BOTÓN “CONTINUAR”
+    // --------------------------------------------
     void ActualizarBotonContinuar()
     {
         foreach (var b in botones)
         {
-            if (b.action == ButtonAction.LoadSavedGame && b.button != null)
+            if (b.action == ButtonAction.ContinueGame && b.button != null)
             {
                 bool tieneGuardado = SaveSystem.HasSave();
-                if (b.button.gameObject.activeSelf != tieneGuardado)
-                    b.button.gameObject.SetActive(tieneGuardado);
+                b.button.gameObject.SetActive(tieneGuardado);
             }
         }
     }
 
-    void EjecutarAccion(MenuButton boton)
+    // --------------------------------------------
+    // ACCIONES DE LOS BOTONES
+    // --------------------------------------------
+    public void EjecutarAccion(MenuButton boton)
     {
         switch (boton.action)
         {
+            // -------------------
+            // CARGAR ESCENA MANUAL (si la defines)
+            // -------------------
             case ButtonAction.LoadScene:
                 if (!string.IsNullOrEmpty(boton.targetScene))
                 {
@@ -72,37 +71,47 @@ public class MenuPrincipal : MonoBehaviour
                 }
                 break;
 
-            case ButtonAction.LoadSavedGame:
-                SaveSystem.LoadGame();
+            // -------------------
+            // CONTINUAR PARTIDA GUARDADA
+            // -------------------
+            case ButtonAction.ContinueGame:
+                if (SaveSystem.HasSave())
+                {
+                    Time.timeScale = 1f;
+                    SaveSystem.LoadGame();
+                    Debug.Log("[MenuPrincipal] Cargando partida guardada...");
+                }
+                else
+                {
+                    Debug.LogWarning("[MenuPrincipal] No hay partida guardada disponible.");
+                }
                 break;
 
+            // -------------------
+            // NUEVA PARTIDA
+            // -------------------
             case ButtonAction.NewGame:
+                Time.timeScale = 1f;
                 SaveSystem.DeleteSave();
                 SceneManager.LoadScene("IntroNivel1");
+                Debug.Log("[MenuPrincipal] Nueva partida iniciada desde IntroNivel1.");
                 break;
 
-            case ButtonAction.SaveGame:
-                var anxietySystem = FindObjectOfType<AnxietySystem>();
-                float ansiedadActual = anxietySystem != null
-                    ? anxietySystem.GetType()
-                        .GetField("anxietyLevel", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                        .GetValue(anxietySystem) is float val ? val : 0f
-                    : 0f;
-                SaveSystem.SaveGame(ansiedadActual, SceneManager.GetActiveScene().name);
-                ActualizarBotonContinuar();
-                break;
-
-            case ButtonAction.ReturnToMenu:
+            // -------------------
+            // OPCIONES
+            // -------------------
+            case ButtonAction.Options:
                 Time.timeScale = 1f;
-                SceneManager.LoadScene("Menu");
+                SceneManager.LoadScene("Opciones");
+                Debug.Log("[MenuPrincipal] Abriendo opciones.");
                 break;
 
+            // -------------------
+            // SALIR DEL JUEGO
+            // -------------------
             case ButtonAction.ExitGame:
                 Application.Quit();
-                break;
-
-            default:
-                Debug.Log("Sin acción asignada al botón: " + boton.buttonName);
+                Debug.Log("[MenuPrincipal] Saliendo del juego...");
                 break;
         }
     }

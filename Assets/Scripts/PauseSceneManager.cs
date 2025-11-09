@@ -6,64 +6,95 @@ public class PauseSceneManager : MonoBehaviour
 {
     [Header("Botones del menú de pausa")]
     public Button continuarButton;
-    public Button guardarButton;
+    public Button guardarButton;     // ★ NUEVO
     public Button opcionesButton;
     public Button menuButton;
     public Button salirButton;
 
-    private string lastScene;
+    private AudioSource[] audiosEnEscena;
 
     void Start()
     {
-        // Recupera la escena desde la que se pausó
-        lastScene = PlayerPrefs.GetString("LastScene", "PrimerNivel");
-
-        // Asignar acciones a cada botón
         if (continuarButton) continuarButton.onClick.AddListener(Continuar);
-        if (guardarButton) guardarButton.onClick.AddListener(Guardar);
+        if (guardarButton) guardarButton.onClick.AddListener(Guardar);   // ★ NUEVO
         if (opcionesButton) opcionesButton.onClick.AddListener(AbrirOpciones);
         if (menuButton) menuButton.onClick.AddListener(VolverMenu);
         if (salirButton) salirButton.onClick.AddListener(SalirJuego);
+
+        PausarAudios();
     }
 
+    // ----------------------------------------------------
+    // PAUSAR / REANUDAR AUDIO
+    // ----------------------------------------------------
+    private void PausarAudios()
+    {
+        audiosEnEscena = FindObjectsOfType<AudioSource>();
+
+        foreach (AudioSource a in audiosEnEscena)
+            if (a.isPlaying) a.Pause();
+
+        Debug.Log("[PauseSceneManager] Todos los audios pausados.");
+    }
+
+    private void ReanudarAudios()
+    {
+        if (audiosEnEscena == null) return;
+
+        foreach (AudioSource a in audiosEnEscena)
+            if (a != null) a.UnPause();
+
+        Debug.Log("[PauseSceneManager] Audios reanudados.");
+    }
+
+    // ----------------------------------------------------
+    // BOTÓN CONTINUAR
+    // ----------------------------------------------------
     public void Continuar()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene(lastScene);
+        ReanudarAudios();
+
+        var pauseCtrl = Object.FindFirstObjectByType<PauseController>();
+        if (pauseCtrl != null) pauseCtrl.Reanudar();
+
+        Debug.Log("[PauseSceneManager] Continuando juego.");
     }
 
+    // ----------------------------------------------------
+    // ★ BOTÓN GUARDAR
+    // ----------------------------------------------------
     public void Guardar()
     {
-        var anxietySystem = FindObjectOfType<AnxietySystem>();
-        float ansiedadActual = 0f;
+        Time.timeScale = 1f; // seguridad
+        SaveSystem.SaveGame();
 
-        if (anxietySystem != null)
-        {
-            var field = typeof(AnxietySystem).GetField("anxietyLevel",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (field != null)
-                ansiedadActual = (float)field.GetValue(anxietySystem);
-        }
-
-        SaveSystem.SaveGame(ansiedadActual, lastScene);
-        Debug.Log($"Partida guardada desde la escena de pausa ({lastScene})");
+        Debug.Log("[PauseSceneManager] Partida guardada desde el menú de pausa.");
     }
 
+    // ----------------------------------------------------
+    // BOTÓN OPCIONES
+    // ----------------------------------------------------
     public void AbrirOpciones()
     {
-        // Guarda la escena de pausa para volver
-        PlayerPrefs.SetString("LastScene", "Pausa");
-        PlayerPrefs.Save();
-
+        Time.timeScale = 1f;
+        ReanudarAudios();
         SceneManager.LoadScene("Opciones");
     }
 
+    // ----------------------------------------------------
+    // VOLVER AL MENÚ
+    // ----------------------------------------------------
     public void VolverMenu()
     {
         Time.timeScale = 1f;
+        ReanudarAudios();
         SceneManager.LoadScene("Menu");
     }
 
+    // ----------------------------------------------------
+    // SALIR DEL JUEGO
+    // ----------------------------------------------------
     public void SalirJuego()
     {
         Application.Quit();

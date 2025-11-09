@@ -399,4 +399,46 @@ public class EllisTankController : MonoBehaviour
 
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
+    // -------------------------------------------------------------
+// MÉTODOS DE CONTROL DE SONIDO GLOBAL (PAUSA / REANUDAR)
+// -------------------------------------------------------------
+public void PausarTodosLosSonidos()
+{
+    if (movementAudio != null && movementAudio.isPlaying)
+        movementAudio.Pause();
+    if (actionAudio != null && actionAudio.isPlaying)
+        actionAudio.Pause();
+    if (idleAudio != null && idleAudio.isPlaying)
+        idleAudio.Pause();
+
+    // Detener también los temporales (por ejemplo, sonidos de focus)
+    AudioSource[] temporales = GetComponentsInChildren<AudioSource>(true);
+    foreach (var a in temporales)
+    {
+        if (a != null && a != movementAudio && a != actionAudio && a != idleAudio && a.isPlaying)
+            a.Pause();
+    }
+
+    Debug.Log("[Ellis] Todos los sonidos pausados.");
+}
+
+public void ReanudarTodosLosSonidos()
+{
+    if (movementAudio != null)
+        movementAudio.UnPause();
+    if (actionAudio != null)
+        actionAudio.UnPause();
+    if (idleAudio != null)
+        idleAudio.UnPause();
+
+    AudioSource[] temporales = GetComponentsInChildren<AudioSource>(true);
+    foreach (var a in temporales)
+    {
+        if (a != null && a != movementAudio && a != actionAudio && a != idleAudio)
+            a.UnPause();
+    }
+
+    Debug.Log("[Ellis] Sonidos reanudados.");
+}
+
 }

@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using System.Collections;
 using System.Collections.Generic;
 
 public class UIHoverController : MonoBehaviour
@@ -11,8 +12,8 @@ public class UIHoverController : MonoBehaviour
     {
         public string name;
         public Selectable selectable;   // Puede ser Button, Dropdown, Slider, etc.
-        public Image image;             // Imagen asociada (asignar directamente en el inspector)
-        public bool isDropdown;         // Marcar si es un Dropdown (para efectos y selección)
+        public Image image;             // Imagen asociada (asignar en el inspector)
+        public bool isDropdown;         // Marcar si es un Dropdown
     }
 
     [Header("Elementos en orden de navegación")]
@@ -37,11 +38,10 @@ public class UIHoverController : MonoBehaviour
     private float lastMoveTime;
     private float moveDelay = 0.25f;
     private bool initialized = false;
-    private string currentScene;
+    private bool dropdownOpen = false;
 
     void Start()
     {
-        currentScene = SceneManager.GetActiveScene().name;
         InicializarElementos();
     }
 
@@ -49,6 +49,14 @@ public class UIHoverController : MonoBehaviour
     {
         if (!initialized || EventSystem.current.currentSelectedGameObject == null)
             InicializarElementos();
+
+        // Si hay un dropdown abierto, no interferir
+        if (dropdownOpen)
+        {
+            if (GameObject.Find("Dropdown List") == null)
+                dropdownOpen = false; // se cerró el dropdown
+            return;
+        }
 
         HandleNavigation();
         UpdateVisuals();
@@ -72,16 +80,20 @@ public class UIHoverController : MonoBehaviour
                 elementos[i].image.raycastTarget = false;
             }
 
-            // Configura acciones solo si es botón
+            // Solo agregamos efecto de click (sin borrar otros listeners)
             if (sel is Button btn)
             {
-                btn.onClick.RemoveAllListeners();
                 int index = i;
-                btn.onClick.AddListener(() => OnButtonClick(index));
+                btn.onClick.AddListener(() => PlayClickSound());
+            }
+            else if (sel is Dropdown dropdown)
+            {
+                int index = i;
+                dropdown.onValueChanged.AddListener(delegate { OnDropdownValueChanged(index); });
             }
         }
 
-        // selecciona el primero activo
+        // Selecciona el primer elemento activo
         for (int i = 0; i < elementos.Count; i++)
         {
             if (elementos[i].selectable && elementos[i].selectable.gameObject.activeInHierarchy)
@@ -101,31 +113,30 @@ public class UIHoverController : MonoBehaviour
         float vertical = 0f;
         try { vertical = Input.GetAxisRaw("Vertical"); } catch { vertical = 0f; }
 
-        if (vertical > 0.5f)
-            MoveSelection(-1);
-        else if (vertical < -0.5f)
-            MoveSelection(1);
+        if (vertical > 0.5f) MoveSelection(-1);
+        else if (vertical < -0.5f) MoveSelection(1);
 
-        // Confirmar (Enter, Espacio, A, X, etc.)
         if (Input.GetButtonDown("Submit") || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))
         {
             var actual = elementos[currentIndex];
-            if (actual.selectable != null)
+            if (actual.selectable == null) return;
+
+            if (actual.isDropdown && actual.selectable is Dropdown dropdown)
             {
-                if (actual.isDropdown && actual.selectable is Dropdown dropdown)
-                {
-                    dropdown.Show(); // abre el menú del Dropdown
-                    PlayClickSound();
-                }
-                else if (actual.selectable is Button button)
-                {
-                    button.onClick.Invoke();
-                    PlayClickSound();
-                }
+                dropdown.Show();
+                dropdownOpen = true;
+                PlayClickSound();
+                StartCoroutine(SeleccionarPrimerItemDropdown());
+            }
+            else if (actual.selectable is Button button)
+            {
+                // Unity ejecutará el onClick ya asignado por MenuPrincipal
+                button.onClick.Invoke();
+                PlayClickSound();
             }
         }
 
-        // Actualizar selección visual si cambia
+        // Detectar cambio de selección
         GameObject current = EventSystem.current.currentSelectedGameObject;
         for (int i = 0; i < elementos.Count; i++)
         {
@@ -161,11 +172,9 @@ public class UIHoverController : MonoBehaviour
 
             bool selected = EventSystem.current.currentSelectedGameObject == sel.gameObject;
 
-            // Escala
             Vector3 targetScale = selected ? originalScales[i] * scaleOnHover : originalScales[i];
             sel.transform.localScale = Vector3.Lerp(sel.transform.localScale, targetScale, Time.unscaledDeltaTime * transitionSpeed);
 
-            // Color y alpha
             if (img != null)
             {
                 Color32 baseColor = selected ? selectedColor : normalColor;
@@ -176,7 +185,21 @@ public class UIHoverController : MonoBehaviour
         }
     }
 
-    void OnButtonClick(int index)
+    IEnumerator SeleccionarPrimerItemDropdown()
+    {
+        yield return null;
+
+        GameObject dropdownList = GameObject.Find("Dropdown List");
+        if (dropdownList == null) yield break;
+
+        Toggle firstToggle = dropdownList.GetComponentInChildren<Toggle>();
+        if (firstToggle != null)
+        {
+            EventSystem.current.SetSelectedGameObject(firstToggle.gameObject);
+        }
+    }
+
+    void OnDropdownValueChanged(int index)
     {
         PlayClickSound();
     }

@@ -1,75 +1,155 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
-using UnityEngine.InputSystem; // nuevo sistema de entrada
 
 public class PauseController : MonoBehaviour
 {
-    private static PauseController instance;
-    private float dpadCooldown = 0.35f;
-    private float nextInputTime = 0f;
+    [Header("Paneles del Canvas")]
+    public GameObject panelPausa;   // Panel del menú de pausa
+    public GameObject panelJuego;   // HUD o UI principal del juego
 
-    private readonly string[] escenasJugables = {
-        "PrimerNivel", "SegundoNivel", "TercerNivel", "CuartoNivel", "QuintoNivel"
+    [Header("Configuración")]
+    public float cooldown = 0.25f;
+
+    private bool enPausa = false;
+    private float nextTime = 0f;
+
+    // -----------------------------
+    // ESCENAS DONDE SÍ FUNCIONA PAUSA
+    // -----------------------------
+    private readonly string[] escenasJugables =
+    {
+        "PrimerNivel",
+        "SegundoNivel",
+        "TercerNivel",
+        "CuartoNivel",
+        "QuintoNivel"
     };
 
-    void Awake()
+    void Start()
     {
-        if (instance == null)
+        string escena = SceneManager.GetActiveScene().name;
+
+        // Si NO es escena jugable → Desactivar PauseController
+        if (!EsEscenaJugable(escena))
         {
-            instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
+            Debug.Log("[PauseController] Desactivado en escena: " + escena);
+            this.enabled = false;
             return;
         }
+
+        Debug.Log("[PauseController] Activo en escena jugable: " + escena);
+
+        if (panelPausa != null) panelPausa.SetActive(false);
+        if (panelJuego != null) panelJuego.SetActive(true);
     }
 
-    void Update()
+    private bool EsEscenaJugable(string escenaActual)
     {
-        string escenaActual = SceneManager.GetActiveScene().name;
-        if (!EsEscenaJugable(escenaActual)) return;
-
-        // Detecta tecla ESC en teclado
-        bool tecladoPausa = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
-
-        // Detecta botón Start / Options en mandos
-        bool botonStart = Gamepad.current != null &&
-                          (Gamepad.current.startButton.wasPressedThisFrame ||
-                           Gamepad.current.selectButton.wasPressedThisFrame);
-
-        // Detecta DPad arriba en cualquier mando
-        bool dpadArriba = Gamepad.current != null &&
-                          Gamepad.current.dpad.up.wasPressedThisFrame;
-
-        // Evita spam si el jugador mantiene presionado
-        bool puedeUsar = Time.time > nextInputTime;
-        if (!puedeUsar) return;
-
-        if (tecladoPausa || botonStart || dpadArriba)
+        foreach (string s in escenasJugables)
         {
-            nextInputTime = Time.time + dpadCooldown;
-            AbrirPausa();
-        }
-    }
-
-    private bool EsEscenaJugable(string escena)
-    {
-        foreach (var e in escenasJugables)
-        {
-            if (e == escena) return true;
+            if (escenaActual == s)
+                return true;
         }
         return false;
     }
 
-    private void AbrirPausa()
+    void Update()
     {
-        string escenaActual = SceneManager.GetActiveScene().name;
-        PlayerPrefs.SetString("LastScene", escenaActual);
-        PlayerPrefs.Save();
+        if (Time.unscaledTime < nextTime) return;
+
+        bool pressed = false;
+
+        // ---------------------------
+        // TECLADO
+        // ---------------------------
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            pressed = true;
+
+        // ---------------------------
+        // GAMEPAD (PS2/3/4/5 - Xbox - Genéricos)
+        // ---------------------------
+        if (Gamepad.current != null)
+        {
+            var gp = Gamepad.current;
+
+            // Start / Options
+            if (gp.startButton.wasPressedThisFrame) pressed = true;
+
+            // Select / Share / Back
+            if (gp.selectButton.wasPressedThisFrame) pressed = true;
+
+            // D-Pad UP (único botón direccional activador)
+            if (gp.dpad.up.wasPressedThisFrame) pressed = true;
+        }
+
+        // ---------------------------
+        // EJECUTAR PAUSA / REANUDAR
+        // ---------------------------
+        if (pressed)
+        {
+            nextTime = Time.unscaledTime + cooldown;
+            if (enPausa) Reanudar();
+            else Pausar();
+        }
+    }
+
+
+
+    // -------------------------------------------------------------
+    // MÉTODOS DE PAUSA Y REANUDACIÓN
+    // -------------------------------------------------------------
+    public void Pausar()
+    {
+        if (enPausa) return;
+        enPausa = true;
 
         Time.timeScale = 0f;
-        SceneManager.LoadScene("Pausa", LoadSceneMode.Single);
+        MusicManager.SilenciarTodo();
+
+        EllisTankController ellis = FindFirstObjectByType<EllisTankController>();
+        if (ellis != null)
+        {
+            ellis.PausarTodosLosSonidos();
+            ellis.enabled = false;
+        }
+
+        if (panelPausa != null) panelPausa.SetActive(true);
+        if (panelJuego != null) panelJuego.SetActive(false);
+
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+    }
+
+    public void Reanudar()
+    {
+        enPausa = false;
+        Time.timeScale = 1f;
+        MusicManager.RestaurarVolumen();
+
+        EllisTankController ellis = FindFirstObjectByType<EllisTankController>();
+        if (ellis != null)
+        {
+            ellis.ReanudarTodosLosSonidos();
+            ellis.enabled = true;
+        }
+
+        if (panelPausa != null) panelPausa.SetActive(false);
+        if (panelJuego != null) panelJuego.SetActive(true);
+    }
+
+    // -------------------------------------------------------------
+    // SALIR Y MENÚ
+    // -------------------------------------------------------------
+    public void SalirMenu()
+    {
+        Time.timeScale = 1f;
+        MusicManager.RestaurarVolumen();
+        SceneManager.LoadScene("Menu");
+    }
+
+    public void SalirJuego()
+    {
+        Application.Quit();
     }
 }
